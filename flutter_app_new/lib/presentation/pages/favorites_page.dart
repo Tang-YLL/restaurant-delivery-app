@@ -168,7 +168,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
                     // 月销量
                     Text(
-                      '月售 ${product.monthlySales}',
+                      '月售 ${product.sales}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.grey,
                           ),

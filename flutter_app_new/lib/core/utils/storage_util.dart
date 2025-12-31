@@ -31,6 +31,11 @@ class StorageUtil {
     return HiveConfig.authBox.get(StorageConstants.refreshTokenKey) as String?;
   }
 
+  /// 删除RefreshToken
+  static Future<void> removeRefreshToken() async {
+    await HiveConfig.authBox.delete(StorageConstants.refreshTokenKey);
+  }
+
   // ============ 用户信息管理 ============
 
   /// 保存用户信息
@@ -102,5 +107,19 @@ class StorageUtil {
   static bool containsKey(String boxName, String key) {
     final box = Hive.box(boxName);
     return box.containsKey(key);
+  }
+
+  // ============ 便捷字符串存储方法 ============
+
+  /// 保存字符串
+  static Future<void> setString(String boxName, String key, String value) async {
+    final box = await Hive.openBox(boxName);
+    await box.put(key, value);
+  }
+
+  /// 获取字符串
+  static String? getString(String boxName, String key) {
+    final box = Hive.box(boxName);
+    return box.get(key) as String?;
   }
 }
