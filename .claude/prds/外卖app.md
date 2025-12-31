@@ -3,7 +3,7 @@ name: 外卖app
 description: 快餐连锁店自有外卖配送系统，包含Flutter移动端用户App、Vue3管理后台和Python后端API
 status: backlog
 created: 2025-12-31T13:18:05Z
-updated: 2025-12-31T13:50:00Z
+updated: 2025-12-31T15:16:57Z
 ---
 
 # PRD: 快餐连锁店自有外卖配送系统
@@ -321,15 +321,19 @@ updated: 2025-12-31T13:50:00Z
 - **SC-14** 用户满意度评分 ≥ 4.0分
 - **SC-15** 客服投诉率 < 5%
 - **SC-16** 订单取消率 < 10%
+- **SC-17** ✅ **双平台支持**：App必须同时支持iOS和Android平台
+- **SC-18** iOS App Store审核通过
+- **SC-19** Google Play Store发布成功
 
 ## Constraints & Assumptions
 
 ### 技术约束
-- **C-1** 移动端必须使用Flutter框架开发
+- **C-1** 移动端必须使用Flutter框架开发，**且必须同时支持iOS和Android双平台**
 - **C-2** 后端必须使用Python开发（建议使用FastAPI或Django REST Framework）
 - **C-3** 数据库使用PostgreSQL或MySQL
 - **C-4** 图片存储使用对象存储服务（如阿里云OSS或腾讯云COS）
 - **C-5** 首期不接入真实支付系统，使用模拟支付
+- **C-6** 部署方式必须基于Docker容器化
 
 ### 资源约束
 - **C-6** 开发团队规模：3人（1个Flutter开发 + 1个Vue3开发 + 1个Python后端开发）
@@ -407,12 +411,14 @@ updated: 2025-12-31T13:50:00Z
 - **D-9** 餐厅提供Logo和品牌素材
 
 ### 开发依赖
-- **D-10** Flutter SDK（≥ 3.0）
-- **D-11** Dart SDK（≥ 2.17）
+- **D-10** Flutter SDK（≥ 3.19）支持iOS和Android
+- **D-11** Dart SDK（≥ 3.10）
 - **D-12** Node.js 16+ 和 npm/yarn/pnpm（Vue3开发）
 - **D-13** Python 3.9+
 - **D-14** Git版本控制
 - **D-15** API测试工具（Postman / curl）
+- **D-16** iOS开发环境（Xcode，仅macOS）
+- **D-17** Android开发环境（Android Studio）
 
 ### 团队依赖
 - **D-16** Flutter移动端开发者
@@ -423,6 +429,9 @@ updated: 2025-12-31T13:50:00Z
 
 ### 技术栈建议
 **移动端（Flutter）**
+- **平台支持**：必须同时支持iOS和Android双平台
+- Flutter SDK版本：≥ 3.19
+- Dart SDK版本：≥ 3.10
 - 状态管理：Provider / Riverpod / Bloc
 - 网络请求：Dio
 - 本地存储：Hive / SharedPreferences

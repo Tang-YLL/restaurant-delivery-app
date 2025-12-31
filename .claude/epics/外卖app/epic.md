@@ -1,10 +1,14 @@
 ---
 name: 外卖app
-status: backlog
+status: in-progress
 created: 2025-12-31T13:44:17Z
-progress: 0%
+updated: 2025-12-31T15:18:17Z
+progress: 77%
 prd: .claude/prds/外卖app.md
 github: [Will be updated when synced to GitHub]
+tasks: 13
+completed: 10
+pending: 3
 ---
 
 # Epic: 快餐连锁店外卖配送系统
@@ -400,48 +404,112 @@ Epic重新生成完成，包含Material文件夹数据准备优化。建议执�
 
 ## Tasks Created
 
-总任务数: 10个
+总任务数: 13个 (原10个已完成 + 新增3个iOS/Android任务)
 
-### Phase 0: 数据准备 (1个任务)
-- [ ] **001.md** - 数据准备 - Material文件解析与数据库初始化 (M/16h, parallel: true)
-  - 解析Material文件夹3668个JSON文件
+### ✅ 已完成任务 (Phase 0-6: 10个任务)
+以下任务已全部完成 ✅
+
+#### Phase 0: 数据准备
+- [x] **001.md** - 数据准备 - Material文件解析与数据库初始化 (16h) ✅ 已完成
+  - 解析Material文件夹1834个JSON文件
   - 配置FastAPI静态文件服务
-  - 商品分类整理（热菜、凉菜、汤类、主食等）
+  - 商品分类整理（12个分类）
   - 数据库初始化和数据验证
 
-### Phase 1-2: 后端层 (4个任务)
-- [ ] **002.md** - 后端基础设施 - FastAPI项目架构与数据库设计 (L/24h, depends: [001], parallel: false)
-  - FastAPI项目、8个核心数据库表、Redis、JWT认证、Alembic
-- [ ] **003.md** - 商品和购物车API实现 (M/16h, depends: [002], parallel: true)
-  - 商品/分类CRUD、购物车接口、库存管理、商品搜索
-- [ ] **004.md** - 订单和评价API实现 (L/20h, depends: [002,003], parallel: true)
+#### Phase 1-2: 后端层
+- [x] **002.md** - 后端基础设施 - FastAPI项目架构与数据库设计 (24h) ✅ 已完成
+  - FastAPI项目、9个核心数据库表、Redis、JWT认证、Alembic
+- [x] **003.md** - 商品和购物车API实现 (16h) ✅ 已完成
+  - 商品/分类CRUD、购物车接口、库存管理、Redis缓存
+- [x] **004.md** - 订单和评价API实现 (20h) ✅ 已完成
   - 订单创建、状态机、评价系统、并发安全、事务处理
-- [ ] **005.md** - 管理后台API实现 (L/20h, depends: [002,003,004], parallel: true)
-  - 管理员认证、订单管理、统计查询、用户管理、评价管理
+- [x] **005.md** - 管理后台API实现 (20h) ✅ 已完成
+  - 管理员认证、订单管理、统计查询、用户管理、评价管理、审计日志
 
-### Phase 3: Flutter移动端 (3个任务)
-- [ ] **006.md** - Flutter基础框架搭建 (M/12h, parallel: true)
+#### Phase 3: Flutter移动端
+- [x] **006.md** - Flutter基础框架搭建 (12h) ✅ 已完成
   - 项目初始化、路由、Provider、Dio、Hive、主题、Mock数据
-- [ ] **007.md** - Flutter核心功能开发 (XL/32h, depends: [006], parallel: false)
+- [x] **007.md** - Flutter核心功能开发 (32h) ✅ 已完成
   - 登录、浏览、购物车、下单、订单管理、模拟支付
-- [ ] **008.md** - Flutter高级功能与UI优化 (L/20h, depends: [007], parallel: true)
+- [x] **008.md** - Flutter高级功能与UI优化 (20h) ✅ 已完成
   - 评价、个人中心、地址管理、UI优化、通知、转场动画
 
-### Phase 4: Vue3管理后台 (1个任务)
-- [ ] **009.md** - Vue3管理后台完整开发 (XL/40h, parallel: true)
+#### Phase 4: Vue3管理后台
+- [x] **009.md** - Vue3管理后台完整开发 (40h) ✅ 已完成
   - 项目搭建、登录认证、订单管理、商品管理、数据统计、实时通知
 
-### Phase 5-6: 测试部署 (1个任务)
-- [ ] **010.md** - 测试和生产环境部署 (L/24h, depends: [005,008,009], parallel: false)
-  - 单元测试(≥70%)、API测试、性能测试、Docker部署、生产环境
+#### Phase 5-6: 测试部署
+- [x] **010.md** - 测试和生产环境部署 (24h) ✅ 已完成
+  - 单元测试(68个用例)、API测试、性能测试、Docker部署、生产环境
 
-### 并行性分析
-- **可并行任务**: 6个 (001/006/009初期并行, 003/004/005/008中期并行)
-- **串行任务**: 4个 (002依赖001, 007依赖006, 010依赖所有功能任务)
-- **总工时**: 212小时 ≈ 26.5个工作日 (3人团队约6-8周，含Phase 0数据准备)
+### 🆕 新增任务 (Phase 7: 双平台发布 - 3个任务)
+基于PRD更新要求，新增iOS和Android双平台支持任务
+
+#### Phase 7: iOS/Android双平台支持
+- [ ] **011.md** - iOS平台配置和构建 (16h, depends: [006,007], status: pending)
+  - iOS开发环境配置（Xcode、CocoaPods）
+  - Flutter iOS配置（Info.plist、签名、权限）
+  - iOS特定功能实现（SafeArea、通知、图标）
+  - iOS构建和测试（Simulator + 真机）
+  - Release构建配置
+  - **验收**: iOS Simulator运行成功、所有功能测试通过、Release构建成功
+
+- [ ] **012.md** - Android平台配置和构建 (12h, depends: [006,007], status: pending)
+  - Android开发环境配置（Android Studio、SDK）
+  - Flutter Android配置（Manifest、gradle、权限）
+  - Android特定功能实现（Material Design、通知、图标）
+  - Android构建和测试（Emulator + 真机）
+  - Release构建（APK + AAB）
+  - **验收**: Android Emulator运行成功、所有功能测试通过、Release构建成功
+
+- [ ] **013.md** - 双平台测试和发布准备 (24h, depends: [011,012], status: pending)
+  - 双平台功能测试（iOS + Android多设备测试）
+  - 性能和兼容性测试（启动时间、内存、帧率）
+  - Bug修复和优化（P0/P1 Bug修复）
+  - App Store发布材料准备（截图、描述、隐私政策）
+  - Google Play发布材料准备（截图、描述、内容评级）
+  - Release版本构建和验证
+  - **验收**: 无P0/P1 Bug、性能指标达标、商店材料齐全、Release构建成功
+
+### 📊 进度总结
+
+**已完成**: 10/13 任务 (77%)
+**待完成**: 3/13 任务 (23%) - iOS/Android双平台支持
+
+**新增工时**: 52小时 (16h + 12h + 24h)
+**原工时**: 212小时
+**总工时**: 264小时 ≈ 33个工作日
+
+**关键路径**:
+- 任务011/012可并行（iOS和Android配置同步进行）
+- 任务013依赖011和012（需要两个平台都配置完成后才能测试）
+
+**并行性优化**:
+- 任务011和012可以同时启动，互不依赖
+- 建议同时进行iOS和Android配置，节省时间
 
 ### 关键优化点
-- ✅ **新增Phase 0**: 优先处理Material文件夹数据导入，快速启动
+- ✅ **已完成Phase 0-6**: 所有核心功能已开发和测试完成
+- 🆕 **新增Phase 7**: 专门针对iOS/Android双平台支持
 - ✅ **本地图片服务**: MVP阶段使用本地静态文件，无需云存储
-- ✅ **数据驱动开发**: 3668个现成菜品数据，大幅减少录入工作
-- ✅ **并行开发策略**: 数据准备完成后，后端、Flutter、Vue3可并行推进
+- ✅ **数据驱动开发**: 1834个现成菜品数据，大幅减少录入工作
+- ✅ **Docker部署**: 完整的容器化部署配置
+- 🆕 **双平台并行**: iOS和Android配置可并行执行，提升效率
+
+### PRD新增要求映射
+以下PRD更新已映射到新任务：
+
+**技术约束 C-1**: "Flutter必须同时支持iOS和Android双平台"
+→ 任务011（iOS配置）+ 任务012（Android配置）
+
+**验收标准 SC-17**: "App必须同时支持iOS和Android平台"
+→ 任务013（双平台测试）
+
+**验收标准 SC-18**: "iOS App Store审核通过"
+→ 任务013（App Store发布准备）
+
+**验收标准 SC-19**: "Google Play Store发布成功"
+→ 任务013（Google Play发布准备）
+
+**开发依赖 D-16/D-17**: iOS/Android开发环境
+→ 任务011/012环境配置步骤
