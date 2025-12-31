@@ -55,7 +55,7 @@ class ProductProvider with ChangeNotifier {
 
       if (response.success && response.data != null) {
         _categories = (response.data! as List)
-            .map((item) => Category.fromJson(item as Map<String, dynamic>))
+            .map((item) => data_models.Category.fromJson(item as Map<String, dynamic>))
             .toList();
         notifyListeners();
       }

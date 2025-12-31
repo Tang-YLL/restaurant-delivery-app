@@ -321,7 +321,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         provider.favoriteCount.toString(),
                         style: TextStyle(color: Colors.grey[600]),
                       )
-                    : null;
+                    : const SizedBox.shrink();
               },
             ),
             onTap: () {

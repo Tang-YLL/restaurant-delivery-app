@@ -28,7 +28,7 @@ class ThemeProvider with ChangeNotifier {
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: Colors.grey[50],
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -63,7 +63,7 @@ class ThemeProvider with ChangeNotifier {
       brightness: Brightness.dark,
     ),
     scaffoldBackgroundColor: Colors.grey[900],
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),

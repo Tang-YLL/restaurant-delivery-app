@@ -50,6 +50,7 @@ class ReviewProvider with ChangeNotifier {
 
         // 缓存到本地
         await StorageUtil.setString(
+          'reviewBox',
           'reviews_$productId',
           jsonEncode({
             'reviews': _reviews.map((r) => r.toJson()).toList(),
@@ -88,6 +89,7 @@ class ReviewProvider with ChangeNotifier {
               .toList();
           reviews.insert(0, review);
           await StorageUtil.setString(
+            'reviewBox',
             'reviews_${review.productId}',
             jsonEncode({
               'reviews': reviews.map((r) => r.toJson()).toList(),
