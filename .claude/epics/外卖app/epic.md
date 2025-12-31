@@ -2,13 +2,13 @@
 name: 外卖app
 status: in-progress
 created: 2025-12-31T13:44:17Z
-updated: 2025-12-31T16:30:00Z
-progress: 77%
+updated: 2025-12-31T16:45:00Z
+progress: 85%
 prd: .claude/prds/外卖app.md
 github: [Will be updated when synced to GitHub]
 tasks: 13
-completed: 10
-pending: 3
+completed: 11
+pending: 2
 ---
 
 # Epic: 快餐连锁店外卖配送系统
