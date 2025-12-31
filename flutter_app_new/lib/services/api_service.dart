@@ -4,13 +4,13 @@ import '../core/config/dio_config.dart';
 import '../core/models/api_response.dart';
 import 'dart:developer' as developer;
 
-/// API服务基类
+/// API服务基类（静态方法）
 class ApiService {
-  final Dio _dio = DioConfig.dio;
-  final Logger _logger = Logger();
+  static final Dio _dio = DioConfig.dio;
+  static final Logger _logger = Logger();
 
   /// GET请求
-  Future<ApiResponse<T>> get<T>(
+  static Future<ApiResponse<T>> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
@@ -32,7 +32,7 @@ class ApiService {
   }
 
   /// POST请求
-  Future<ApiResponse<T>> post<T>(
+  static Future<ApiResponse<T>> post<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
@@ -56,7 +56,7 @@ class ApiService {
   }
 
   /// PUT请求
-  Future<ApiResponse<T>> put<T>(
+  static Future<ApiResponse<T>> put<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
@@ -80,7 +80,7 @@ class ApiService {
   }
 
   /// DELETE请求
-  Future<ApiResponse<T>> delete<T>(
+  static Future<ApiResponse<T>> delete<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
@@ -104,7 +104,7 @@ class ApiService {
   }
 
   /// PATCH请求
-  Future<ApiResponse<T>> patch<T>(
+  static Future<ApiResponse<T>> patch<T>(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
@@ -128,7 +128,7 @@ class ApiService {
   }
 
   /// 文件上传
-  Future<ApiResponse<T>> upload<T>(
+  static Future<ApiResponse<T>> upload<T>(
     String path,
     FormData formData, {
     Options? options,
@@ -152,7 +152,7 @@ class ApiService {
   }
 
   /// 文件下载
-  Future<void> download(
+  static Future<void> download(
     String url,
     String savePath, {
     ProgressCallback? onReceiveProgress,

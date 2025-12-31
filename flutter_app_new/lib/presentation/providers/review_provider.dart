@@ -24,7 +24,7 @@ class ReviewProvider with ChangeNotifier {
 
     try {
       // 先尝试从本地缓存读取
-      final cachedData = await StorageUtil.getString('reviews_$productId');
+      final cachedData = await StorageUtil.getString('reviewBox', 'reviews_$productId');
       if (cachedData != null) {
         final jsonData = jsonDecode(cachedData);
         _reviews = (jsonData['reviews'] as List)
@@ -80,7 +80,7 @@ class ReviewProvider with ChangeNotifier {
         _reviews.insert(0, review);
 
         // 更新缓存
-        final cachedData = await StorageUtil.getString('reviews_${review.productId}');
+        final cachedData = await StorageUtil.getString('reviewBox', 'reviews_${review.productId}');
         if (cachedData != null) {
           final jsonData = jsonDecode(cachedData);
           final reviews = (jsonData['reviews'] as List)

@@ -122,4 +122,36 @@ class StorageUtil {
     final box = Hive.box(boxName);
     return box.get(key) as String?;
   }
+
+  // ============ 针对特定Box的便捷方法 ============
+
+  /// 从addressBox获取字符串
+  static Future<String?> getAddressString(String key) async {
+    final box = await Hive.openBox('addressBox');
+    return box.get(key) as String?;
+  }
+
+  /// 保存字符串到addressBox
+  static Future<void> setAddressString(String key, String value) async {
+    final box = await Hive.openBox('addressBox');
+    await box.put(key, value);
+  }
+
+  /// 从favoriteBox获取字符串
+  static Future<String?> getFavoriteString(String key) async {
+    final box = await Hive.openBox('favoriteBox');
+    return box.get(key) as String?;
+  }
+
+  /// 保存字符串到favoriteBox
+  static Future<void> setFavoriteString(String key, String value) async {
+    final box = await Hive.openBox('favoriteBox');
+    await box.put(key, value);
+  }
+
+  /// 从favoriteBox删除数据
+  static Future<void> removeFavorite(String key) async {
+    final box = await Hive.openBox('favoriteBox');
+    await box.delete(key);
+  }
 }

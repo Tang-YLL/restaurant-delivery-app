@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
-import '../data/models/order.dart';
+import '../../data/models/order.dart';
 import 'package:intl/intl.dart';
 
 /// 确认订单页面

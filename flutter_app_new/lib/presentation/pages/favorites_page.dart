@@ -99,7 +99,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductDetailPage(product: product),
+              builder: (context) => ProductDetailPage(productId: product.id),
             ),
           );
         },

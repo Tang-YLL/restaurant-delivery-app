@@ -33,7 +33,7 @@ class AddressProvider with ChangeNotifier {
 
     try {
       // 从本地存储读取
-      final cachedData = await StorageUtil.getString('addresses');
+      final cachedData = await StorageUtil.getString('addressBox', 'addresses');
       if (cachedData != null) {
         final jsonData = jsonDecode(cachedData);
         _addresses = (jsonData as List)
@@ -52,6 +52,7 @@ class AddressProvider with ChangeNotifier {
 
         // 缓存到本地
         await StorageUtil.setString(
+          'addressBox',
           'addresses',
           jsonEncode(_addresses.map((a) => a.toJson()).toList()),
         );
@@ -230,6 +231,7 @@ class AddressProvider with ChangeNotifier {
   /// 保存到缓存
   Future<void> _saveToCache() async {
     await StorageUtil.setString(
+      'addressBox',
       'addresses',
       jsonEncode(_addresses.map((a) => a.toJson()).toList()),
     );

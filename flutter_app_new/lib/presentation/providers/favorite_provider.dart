@@ -30,7 +30,7 @@ class FavoriteProvider with ChangeNotifier {
 
     try {
       // 从本地存储读取
-      final cachedData = await StorageUtil.getString('favorites');
+      final cachedData = await StorageUtil.getFavoriteString('favorites');
       if (cachedData != null) {
         final productIds = jsonDecode(cachedData) as List;
         // 这里简化处理,实际应该从产品列表中查找
@@ -47,7 +47,7 @@ class FavoriteProvider with ChangeNotifier {
 
         // 缓存商品ID列表
         final productIds = _favorites.map((p) => p.id).toList();
-        await StorageUtil.setString('favorites', jsonEncode(productIds));
+        await StorageUtil.setFavoriteString('favorites', jsonEncode(productIds));
       }
     } catch (e) {
       _errorMessage = '加载收藏失败: $e';
@@ -129,7 +129,7 @@ class FavoriteProvider with ChangeNotifier {
 
       if (response.success) {
         _favorites.clear();
-        await StorageUtil.remove('favorites');
+        await StorageUtil.removeFavorite('favorites');
 
         notifyListeners();
         return true;
@@ -149,7 +149,7 @@ class FavoriteProvider with ChangeNotifier {
   /// 更新缓存
   Future<void> _updateCache() async {
     final productIds = _favorites.map((p) => p.id).toList();
-    await StorageUtil.setString('favorites', jsonEncode(productIds));
+    await StorageUtil.setFavoriteString('favorites', jsonEncode(productIds));
   }
 
   /// 清除错误信息
