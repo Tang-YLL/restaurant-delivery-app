@@ -14,6 +14,7 @@
 - Dart: >=3.0.0 <4.0.0
 - iOS: 13.0+
 - Android: API 21+ (Android 5.0+)
+- Android SDK: 36 (compileSdk & targetSdk)
 
 ## 项目创建步骤
 
@@ -110,11 +111,21 @@ pod install
 ```kotlin
 namespace = "com.restaurant.deliveryapp"
 applicationId = "com.restaurant.deliveryapp"
-compileSdk = 34
+compileSdk = 36
 minSdk = 21
-targetSdk = 34
+targetSdk = 36
 versionCode = 1
 versionName = "1.0.0"
+
+// Core library desugaring for compatibility
+isCoreLibraryDesugaringEnabled = true
+```
+
+**依赖**:
+```kotlin
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
 ```
 
 ### AndroidManifest.xml配置
