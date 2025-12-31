@@ -2,7 +2,7 @@
 name: 外卖app
 status: in-progress
 created: 2025-12-31T13:44:17Z
-updated: 2025-12-31T15:18:17Z
+updated: 2025-12-31T16:30:00Z
 progress: 77%
 prd: .claude/prds/外卖app.md
 github: [Will be updated when synced to GitHub]
@@ -445,31 +445,50 @@ Epic重新生成完成，包含Material文件夹数据准备优化。建议执�
 ### 🆕 新增任务 (Phase 7: 双平台发布 - 3个任务)
 基于PRD更新要求，新增iOS和Android双平台支持任务
 
-#### Phase 7: iOS/Android双平台支持
-- [ ] **011.md** - iOS平台配置和构建 (16h, depends: [006,007], status: pending)
-  - iOS开发环境配置（Xcode、CocoaPods）
-  - Flutter iOS配置（Info.plist、签名、权限）
-  - iOS特定功能实现（SafeArea、通知、图标）
-  - iOS构建和测试（Simulator + 真机）
-  - Release构建配置
-  - **验收**: iOS Simulator运行成功、所有功能测试通过、Release构建成功
+#### Phase 7: iOS/Android双平台支持 (重构方案)
 
-- [ ] **012.md** - Android平台配置和构建 (12h, depends: [006,007], status: pending)
-  - Android开发环境配置（Android Studio、SDK）
-  - Flutter Android配置（Manifest、gradle、权限）
-  - Android特定功能实现（Material Design、通知、图标）
-  - Android构建和测试（Emulator + 真机）
-  - Release构建（APK + AAB）
-  - **验收**: Android Emulator运行成功、所有功能测试通过、Release构建成功
+- [ ] **011.md** - 创建全新的Flutter项目（包含iOS和Android支持） (8h, status: pending)
+  - 创建新的Flutter项目（flutter_app_new/）
+  - 同时启用iOS和Android平台: `flutter create --platforms=ios,android flutter_app_new`
+  - 配置项目基础架构
+    - 复制pubspec.yaml依赖配置
+    - 创建目录结构（lib/core、lib/data、lib/presentation、lib/services）
+  - 配置iOS基础设置（Bundle Identifier、Info.plist、Podfile）
+  - 配置Android基础设置（包名、Manifest、gradle）
+  - 配置开发环境（VS Code配置、分析选项）
+  - 验证iOS和Android空白项目可以运行
+  - **验收**: 新项目在iOS Simulator和Android Emulator都能运行空白应用
 
-- [ ] **013.md** - 双平台测试和发布准备 (24h, depends: [011,012], status: pending)
-  - 双平台功能测试（iOS + Android多设备测试）
-  - 性能和兼容性测试（启动时间、内存、帧率）
-  - Bug修复和优化（P0/P1 Bug修复）
-  - App Store发布材料准备（截图、描述、隐私政策）
-  - Google Play发布材料准备（截图、描述、内容评级）
-  - Release版本构建和验证
-  - **验收**: 无P0/P1 Bug、性能指标达标、商店材料齐全、Release构建成功
+- [ ] **012.md** - 迁移现有代码到新Flutter项目 (16h, depends: [011], status: pending)
+  - 迁移数据模型（lib/data/models/下的所有文件）
+  - 迁移Provider状态管理（lib/presentation/providers/）
+  - 迁移服务层（lib/services/）
+  - 迁移UI页面（lib/presentation/pages/）
+    - 登录注册相关页面
+    - 商品浏览相关页面
+    - 购物车和订单相关页面
+    - 个人中心相关页面
+  - 迁移路由配置（lib/presentation/routes/）
+  - 迁移工具类（lib/core/utils/、lib/core/config/）
+  - 迁移主题配置
+  - 修复导入路径和依赖关系
+  - 逐步测试每个模块的迁移
+  - **验收**: 所有功能从旧项目成功迁移到新项目
+
+- [ ] **013.md** - 双平台测试和验证 (20h, depends: [012], status: pending)
+  - iOS平台测试
+    - 在iOS Simulator上测试所有功能
+    - 验证iOS特定功能（SafeArea、权限、返回手势）
+    - 修复iOS平台Bug
+  - Android平台测试
+    - 在Android Emulator上测试所有功能
+    - 验证Android特定功能（Material Design、权限、返回键）
+    - 修复Android平台Bug
+  - 性能测试（启动时间、内存占用、帧率）
+  - UI适配检查（不同屏幕尺寸、横竖屏）
+  - Bug修复和优化
+  - Release构建测试（iOS Archive、Android APK/AAB）
+  - **验收**: iOS和Android平台所有功能正常、性能达标、Release构建成功
 
 ### 📊 进度总结
 
