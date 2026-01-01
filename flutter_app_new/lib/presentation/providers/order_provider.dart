@@ -9,6 +9,7 @@ class OrderProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _selectedStatus;
   Order? _currentOrder;
+  String? _errorMessage;
 
   final OrderRepository _repository = OrderRepository();
 
@@ -16,6 +17,7 @@ class OrderProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get selectedStatus => _selectedStatus;
   Order? get currentOrder => _currentOrder;
+  String? get errorMessage => _errorMessage;
 
   /// 获取筛选后的订单列表
   List<Order> get filteredOrders {
