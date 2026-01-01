@@ -42,9 +42,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
   }
 
   TabController get _controller {
-    if (_tabController == null || !_tabController!.hasClients) {
-      _tabController = TabController(length: 3, vsync: this);
-    }
+    _tabController ??= TabController(length: 3, vsync: this);
     return _tabController!;
   }
 
