@@ -137,10 +137,10 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
                         _selectedCity != null &&
                         _selectedDistrict != null
                     ? () {
-                        final result = {
-                          'province': _selectedProvince,
-                          'city': _selectedCity,
-                          'district': _selectedDistrict,
+                        final result = <String, String>{
+                          'province': _selectedProvince!,
+                          'city': _selectedCity!,
+                          'district': _selectedDistrict!,
                         };
                         widget.onConfirm(
                           _selectedProvince!,
@@ -293,12 +293,17 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
               _selectedDistrict = district;
             });
             // 自动关闭并返回结果
-            widget.onConfirm(_selectedProvince!, _selectedCity!, _selectedDistrict!);
-            Navigator.of(context).pop({
-              'province': _selectedProvince,
-              'city': _selectedCity,
-              'district': _selectedDistrict,
-            });
+            final result = <String, String>{
+              'province': _selectedProvince!,
+              'city': _selectedCity!,
+              'district': _selectedDistrict!,
+            };
+            widget.onConfirm(
+              _selectedProvince!,
+              _selectedCity!,
+              _selectedDistrict!,
+            );
+            Navigator.of(context).pop(result);
           },
         );
       },
