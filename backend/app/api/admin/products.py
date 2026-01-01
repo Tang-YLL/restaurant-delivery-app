@@ -159,14 +159,19 @@ async def update_product(
         product_service = ProductService()
         product = await product_service.update_product(
             product_id=product_id,
-            **product_data.model_dump(exclude_unset=True),
+            product_data=product_data.model_dump(exclude_unset=True),
             db=db
         )
+        if not product:
+            raise HTTPException(status_code=404, detail="商品不存在")
         return product
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception:
-        raise HTTPException(status_code=404, detail="商品不存在")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"更新商品{product_id}失败: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"更新商品失败: {str(e)}")
 
 
 @router.delete("/{product_id}", response_model=MessageResponse)
