@@ -289,7 +289,12 @@ const loadProducts = async () => {
   loading.value = true
   try {
     const data = await getProductList(queryForm)
-    productList.value = data.list
+    // 处理图片URL，将相对路径转换为完整URL
+    productList.value = data.list.map((product: any) => ({
+      ...product,
+      image: getImageUrl(product.image || '/images/default.png'),
+      images: (product.images || []).map((img: string) => getImageUrl(img))
+    }))
     total.value = data.total
   } catch (error) {
     console.error('Failed to load products:', error)
