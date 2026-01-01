@@ -137,17 +137,12 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
                         _selectedCity != null &&
                         _selectedDistrict != null
                     ? () {
-                        final result = <String, String>{
-                          'province': _selectedProvince!,
-                          'city': _selectedCity!,
-                          'district': _selectedDistrict!,
-                        };
+                        // 只调用回调，由回调中的sheetContext来pop
                         widget.onConfirm(
                           _selectedProvince!,
                           _selectedCity!,
                           _selectedDistrict!,
                         );
-                        Navigator.of(context).pop(result);
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
@@ -289,18 +284,12 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
           selected: isSelected,
           selectedTileColor: Colors.orange[50],
           onTap: () {
-            // 直接返回结果，不需要setState（因为马上要关闭了）
-            final result = <String, String>{
-              'province': _selectedProvince!,
-              'city': _selectedCity!,
-              'district': district,
-            };
+            // 只调用回调，由回调中的sheetContext来pop
             widget.onConfirm(
               _selectedProvince!,
               _selectedCity!,
               district,
             );
-            Navigator.of(context).pop(result);
           },
         );
       },
@@ -319,7 +308,7 @@ Future<Map<String, String>?> showCityPicker(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (context) {
+    builder: (sheetContext) {
       return Container(
         height: 400,
         decoration: const BoxDecoration(
@@ -332,7 +321,13 @@ Future<Map<String, String>?> showCityPicker(
           initialCity: initialCity,
           initialDistrict: initialDistrict,
           onConfirm: (province, city, district) {
-            // 不在这里pop，让点击区县时自动处理
+            // 使用sheetContext来返回数据
+            final result = <String, String>{
+              'province': province,
+              'city': city,
+              'district': district,
+            };
+            Navigator.of(sheetContext).pop(result);
           },
         ),
       );
