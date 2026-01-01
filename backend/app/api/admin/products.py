@@ -3,7 +3,7 @@
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.core.security import get_current_admin
@@ -23,6 +23,102 @@ from app.models import Product
 router = APIRouter(prefix="/admin/products", tags=["管理后台-商品管理"])
 
 
+@router.get("", response_model=dict)
+async def get_products_list(
+    keyword: Optional[str] = Query(None, description="搜索关键词"),
+    category_id: Optional[int] = Query(None, description="分类ID"),
+    is_active: Optional[bool] = Query(None, description="是否上架"),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    获取商品列表（管理后台）
+
+    支持关键词搜索、分类筛选、状态筛选、分页
+    """
+    try:
+        from sqlalchemy import select, func, and_, or_
+        from app.models import Product, Category
+
+        skip = (page - 1) * page_size
+
+        # 构建查询条件
+        conditions = []
+
+        if keyword:
+            conditions.append(
+                or_(
+                    Product.title.ilike(f"%{keyword}%"),
+                    Product.description.ilike(f"%{keyword}%")
+                )
+            )
+
+        if category_id:
+            conditions.append(Product.category_id == category_id)
+
+        if is_active is not None:
+            conditions.append(Product.is_active == is_active)
+
+        # 查询商品列表
+        query = select(Product).where(
+            and_(*conditions) if conditions else True
+        ).order_by(
+            Product.created_at.desc()
+        ).offset(skip).limit(page_size)
+
+        result = await db.execute(query)
+        products = result.scalars().all()
+
+        # 查询总数
+        count_query = select(func.count(Product.id)).where(
+            and_(*conditions) if conditions else True
+        )
+        count_result = await db.execute(count_query)
+        total = count_result.scalar() or 0
+
+        # 构建响应数据
+        products_data = []
+        for product in products:
+            # 获取分类信息
+            category_result = await db.execute(
+                select(Category).where(Category.id == product.category_id)
+            )
+            category = category_result.scalar_one_or_none()
+
+            products_data.append({
+                "id": product.id,
+                "name": product.title,
+                "title": product.title,
+                "description": product.description,
+                "price": float(product.price),
+                "stock": product.stock,
+                "sales": product.sales_count,
+                "category": category.name if category else "",
+                "categoryId": product.category_id,
+                "image": product.local_image_path or product.image_url or "",
+                "images": [product.local_image_path] if product.local_image_path else [],
+                "status": "active" if product.is_active else "inactive",
+                "is_active": product.is_active,
+                "createdAt": product.created_at.isoformat() if product.created_at else "",
+                "updatedAt": product.updated_at.isoformat() if product.updated_at else ""
+            })
+
+        # 计算总页数
+        total_pages = (total + page_size - 1) // page_size
+
+        return {
+            "list": products_data,
+            "total": total,
+            "page": page,
+            "pageSize": page_size,
+            "totalPages": total_pages
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("", response_model=ProductResponse, status_code=201)
 async def create_product(
     product_data: ProductCreate,
@@ -36,14 +132,10 @@ async def create_product(
     """
     try:
         product_service = ProductService()
+        # 转换为字典，Product模型使用status字段，不需要is_available
+        product_dict = product_data.model_dump()
         product = await product_service.create_product(
-            name=product_data.name,
-            description=product_data.description,
-            price=product_data.price,
-            category_id=product_data.category_id,
-            image_url=product_data.image_url,
-            is_available=product_data.is_available,
-            is_hot=product_data.is_hot,
+            product_data=product_dict,
             db=db
         )
         return product

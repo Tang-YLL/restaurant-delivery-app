@@ -3,7 +3,7 @@ import type { Product, ProductForm, ProductQuery, PageResponse } from '../types'
 
 // 获取商品列表
 export const getProductList = (params: ProductQuery) => {
-  return request.get<any, PageResponse<Product>>('/products', { params })
+  return request.get<any, PageResponse<Product>>('/admin/products', { params })
 }
 
 // 获取商品详情
@@ -12,33 +12,47 @@ export const getProductDetail = (id: number) => {
 }
 
 // 创建商品
-export const createProduct = (data: ProductForm) => {
+export const createProduct = async (data: ProductForm) => {
+  // 获取分类列表以找到category_id
+  const categories = await request.get<any, Array<{ id: number; name: string; code: string }>>('/categories')
+  const category = categories.find((cat: any) => cat.name === data.category)
+
+  if (!category) {
+    throw new Error('分类不存在')
+  }
+
   // 字段映射：前端字段 -> 后端字段
   const payload = {
-    title: data.name,
+    name: data.name,
     description: data.description,
     price: data.price,
     stock: data.stock,
-    category_id: parseInt(data.category),
-    local_image_path: data.image || '/images/default.png',
-    status: data.status === 'active' ? 'ACTIVE' : 'INACTIVE',
-    is_active: true
+    category_id: category.id,
+    image_url: data.image || '/images/default.png',
+    is_available: data.status === 'active'
   }
   return request.post('/admin/products', payload)
 }
 
 // 更新商品
-export const updateProduct = (id: number, data: ProductForm) => {
+export const updateProduct = async (id: number, data: ProductForm) => {
+  // 获取分类列表以找到category_id
+  const categories = await request.get<any, Array<{ id: number; name: string; code: string }>>('/categories')
+  const category = categories.find((cat: any) => cat.name === data.category)
+
+  if (!category) {
+    throw new Error('分类不存在')
+  }
+
   // 字段映射：前端字段 -> 后端字段
   const payload = {
-    title: data.name,
+    name: data.name,
     description: data.description,
     price: data.price,
     stock: data.stock,
-    category_id: parseInt(data.category),
-    local_image_path: data.image || '/images/default.png',
-    status: data.status === 'active' ? 'ACTIVE' : 'INACTIVE',
-    is_active: true
+    category_id: category.id,
+    image_url: data.image || '/images/default.png',
+    is_available: data.status === 'active'
   }
   return request.put(`/admin/products/${id}`, payload)
 }
@@ -50,7 +64,7 @@ export const deleteProduct = (id: number) => {
 
 // 获取商品分类
 export const getCategories = () => {
-  return request.get<any, string[]>('/categories')
+  return request.get<any, Array<{ id: number; name: string; code: string }>>('/categories')
 }
 
 // 更新商品库存

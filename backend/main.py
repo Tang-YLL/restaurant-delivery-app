@@ -20,7 +20,7 @@ from app.core.exceptions import (
     general_exception_handler
 )
 from app.api import auth, users, products, categories, cart, orders, reviews, admin_auth
-from app.api.admin import orders as admin_orders, analytics, users as admin_users, reviews as admin_reviews, audit_logs, products as admin_products
+from app.api.admin import orders as admin_orders, analytics, users as admin_users, reviews as admin_reviews, audit_logs, products as admin_products, uploads
 
 settings = get_settings()
 logger = setup_logger()
@@ -74,6 +74,10 @@ app.add_exception_handler(Exception, general_exception_handler)
 if not IS_TESTING:
     try:
         app.mount("/static", StaticFiles(directory=settings.STATIC_FILES_PATH), name="static")
+        # 挂载商品图片目录
+        images_dir = "public/images"
+        if os.path.exists(images_dir):
+            app.mount("/images", StaticFiles(directory=os.path.join(images_dir, "products")), name="images")
     except RuntimeError:
         # 静态文件目录不存在时警告但不中断启动
         logger.warning(f"静态文件目录不存在: {settings.STATIC_FILES_PATH}")
@@ -95,6 +99,7 @@ app.include_router(admin_users.router, prefix=settings.API_V1_PREFIX)
 app.include_router(admin_reviews.router, prefix=settings.API_V1_PREFIX)
 app.include_router(audit_logs.router, prefix=settings.API_V1_PREFIX)
 app.include_router(admin_products.router, prefix=settings.API_V1_PREFIX)
+app.include_router(uploads.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/")

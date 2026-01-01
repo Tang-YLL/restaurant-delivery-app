@@ -132,30 +132,62 @@
           />
         </el-form-item>
 
-        <el-form-item label="主图路径" prop="image">
-          <el-input v-model="productForm.image" placeholder="请输入图片路径，如: /images/product.jpg" />
+        <el-form-item label="商品主图" prop="image">
+          <div class="image-upload-container">
+            <el-upload
+              class="image-uploader"
+              :action="uploadAction"
+              :show-file-list="false"
+              :on-success="handleImageSuccess"
+              :on-error="handleImageError"
+              :before-upload="beforeImageUpload"
+              :headers="uploadHeaders"
+              accept="image/*"
+            >
+              <img v-if="productForm.image" :src="getImageUrl(productForm.image)" class="uploaded-image" />
+              <div v-else class="uploader-placeholder">
+                <el-icon class="uploader-icon"><Plus /></el-icon>
+                <div class="uploader-text">点击上传</div>
+              </div>
+            </el-upload>
+            <div class="upload-tip">
+              <p>支持jpg、png、gif、webp格式，文件大小不超过5MB</p>
+              <el-input
+                v-model="productForm.image"
+                placeholder="或直接输入图片URL"
+                style="margin-top: 10px"
+              />
+            </div>
+          </div>
         </el-form-item>
 
-        <el-form-item label="图片路径">
-          <el-input
-            v-model="imagePathInput"
-            placeholder="输入图片路径后点击添加"
-            style="margin-bottom: 10px"
-          >
-            <template #append>
-              <el-button @click="addImagePath">添加</el-button>
-            </template>
-          </el-input>
-          <div class="image-paths-list" v-if="productForm.images.length > 0">
-            <el-tag
-              v-for="(img, index) in productForm.images"
-              :key="index"
-              closable
-              @close="removeImagePath(index)"
-              style="margin-right: 10px; margin-bottom: 10px"
-            >
-              {{ img }}
-            </el-tag>
+        <el-form-item label="商品图片">
+          <div class="multiple-images-upload">
+            <div class="image-list">
+              <div v-for="(img, index) in productForm.images" :key="index" class="image-item">
+                <el-image :src="getImageUrl(img)" fit="cover" style="width: 100px; height: 100px" />
+                <div class="image-actions">
+                  <el-button type="danger" size="small" circle @click="removeImagePath(index)">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+              </div>
+              <el-upload
+                class="image-uploader-inline"
+                :action="uploadAction"
+                :show-file-list="false"
+                :on-success="handleImagesSuccess"
+                :on-error="handleImageError"
+                :before-upload="beforeImageUpload"
+                :headers="uploadHeaders"
+                accept="image/*"
+              >
+                <div class="add-image-btn">
+                  <el-icon><Plus /></el-icon>
+                  <span>添加</span>
+                </div>
+              </el-upload>
+            </div>
           </div>
         </el-form-item>
 
@@ -191,10 +223,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, RefreshLeft } from '@element-plus/icons-vue'
+import { Plus, Search, RefreshLeft, Delete } from '@element-plus/icons-vue'
 import { getProductList, createProduct, updateProduct, deleteProduct, getCategories, updateStock } from '../api/product'
 import type { Product, ProductForm, ProductQuery } from '../types'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormRules, UploadProps } from 'element-plus'
 
 const loading = ref(false)
 const productList = ref<Product[]>([])
@@ -206,6 +238,18 @@ const isEdit = ref(false)
 const currentProductId = ref(0)
 const formRef = ref<FormInstance>()
 const imagePathInput = ref('')
+
+// 图片上传配置
+const uploadAction = computed(() => {
+  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/admin/uploads/image`
+})
+
+const uploadHeaders = computed(() => {
+  const token = localStorage.getItem('token')
+  return {
+    Authorization: `Bearer ${token}`
+  }
+})
 
 const queryForm = reactive<ProductQuery>({
   page: 1,
@@ -257,7 +301,8 @@ const loadProducts = async () => {
 const loadCategories = async () => {
   try {
     const data = await getCategories()
-    categories.value = data
+    // 从分类对象数组中提取name字段
+    categories.value = data.map((cat: any) => cat.name)
   } catch (error) {
     console.error('Failed to load categories:', error)
   }
@@ -379,6 +424,55 @@ const resetForm = () => {
   formRef.value?.resetFields()
 }
 
+// 图片上传处理
+const beforeImageUpload: UploadProps['beforeUpload'] = (rawFile) => {
+  const isImage = rawFile.type.startsWith('image/')
+  const isLt5M = rawFile.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过5MB!')
+    return false
+  }
+  return true
+}
+
+const handleImageSuccess: UploadProps['onSuccess'] = (response) => {
+  console.log('上传成功响应:', response)
+  if (response && response.url) {
+    productForm.image = response.url
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error('图片上传失败：响应格式错误')
+  }
+}
+
+const handleImageError: UploadProps['onError'] = (error) => {
+  console.error('上传错误:', error)
+  ElMessage.error('图片上传失败，请检查网络连接或使用手动输入')
+}
+
+const handleImagesSuccess: UploadProps['onSuccess'] = (response) => {
+  console.log('批量上传成功响应:', response)
+  if (response && response.url) {
+    productForm.images.push(response.url)
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error('图片上传失败：响应格式错误')
+  }
+}
+
+const getImageUrl = (path: string) => {
+  if (!path) return ''
+  if (path.startsWith('http')) {
+    return path
+  }
+  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001'}${path}`
+}
+
 onMounted(() => {
   loadProducts()
   loadCategories()
@@ -409,5 +503,138 @@ onMounted(() => {
 .image-paths-list {
   max-height: 100px;
   overflow-y: auto;
+}
+
+/* 图片上传样式 */
+.image-upload-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.image-uploader {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  width: 148px;
+  height: 148px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-uploader:hover {
+  border-color: #409eff;
+}
+
+.uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+}
+
+.uploader-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploader-text {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c939d;
+}
+
+.uploaded-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-tip {
+  flex: 1;
+}
+
+.add-image-btn {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.add-image-btn:hover {
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.add-image-btn span {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.upload-tip p {
+  margin: 0 0 10px 0;
+  color: #909399;
+  font-size: 12px;
+}
+
+/* 多图片上传样式 */
+.multiple-images-upload {
+  width: 100%;
+}
+
+.image-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.image-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #dcdfe6;
+}
+
+.image-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+
+.image-item:hover .image-actions {
+  display: block;
+}
+
+.image-uploader-inline {
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.image-uploader-inline:hover {
+  border-color: #409eff;
 }
 </style>

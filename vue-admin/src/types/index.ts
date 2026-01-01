@@ -139,3 +139,22 @@ export interface PageResponse<T = any> {
   page: number
   pageSize: number
 }
+
+// 分类相关类型
+export interface Category {
+  id: number
+  name: string
+  code: string
+  description?: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface CategoryForm {
+  name: string
+  code: string
+  description?: string
+  sort_order: number
+  is_active: boolean
+}
