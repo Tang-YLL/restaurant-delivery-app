@@ -106,24 +106,26 @@ export interface DashboardStats {
 // 评价类型
 export interface Review {
   id: number
-  productId: number
-  productName: string
-  userId: number
-  userName: string
-  userAvatar: string
+  user_id: number
+  user_phone?: string
+  user_nickname?: string
+  product_id: number
+  product_name?: string
   rating: number
   content: string
   images?: string[]
-  status: 'pending' | 'approved' | 'rejected'
-  createdAt: string
+  admin_reply?: string
+  is_visible: boolean
+  created_at: string
+  updated_at?: string
 }
 
 export interface ReviewQuery {
   page: number
   pageSize: number
-  status?: string
+  productId?: number
   rating?: number
-  keyword?: string
+  isVisible?: boolean
 }
 
 // API响应类型

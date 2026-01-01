@@ -154,11 +154,18 @@ async def reply_review(
     try:
         service = AdminService()
 
-        # 查询评价信息
-        from app.repositories import ReviewRepository
+        # 查询评价信息（预加载关联对象）
+        from sqlalchemy.orm import selectinload
+        from sqlalchemy import select
         from app.models import Review
-        review_repo = ReviewRepository(Review, db)
-        current_review = await review_repo.get_by_id(review_id)
+
+        query = select(Review).options(
+            selectinload(Review.user),
+            selectinload(Review.product)
+        ).where(Review.id == review_id)
+
+        result = await db.execute(query)
+        current_review = result.scalar_one_or_none()
 
         if not current_review:
             raise HTTPException(status_code=404, detail="评价不存在")

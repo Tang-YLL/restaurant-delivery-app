@@ -1497,7 +1497,12 @@ class AdminService:
         # 查询评价
         skip = (page - 1) * page_size
 
-        query = select(Review)
+        from sqlalchemy.orm import selectinload
+
+        query = select(Review).options(
+            selectinload(Review.user),
+            selectinload(Review.product)
+        )
         if conditions:
             query = query.where(and_(*conditions))
 
