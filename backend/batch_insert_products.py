@@ -14,7 +14,16 @@ from app.models import Product
 from sqlalchemy import select, func
 
 
-# 商品数据列表
+# 可用的图片列表（轮询使用）
+AVAILABLE_IMAGES = [
+    "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
+    "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
+    "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
+    "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
+    "/images/products/efd083e3-dc06-4ba7-a686-22a9bd472b4c.png",
+]
+
+# 商品数据列表（不含图片字段，图片将在创建时自动分配）
 PRODUCTS_DATA = [
     # 主食类 (category_id=3)
     {
@@ -23,8 +32,6 @@ PRODUCTS_DATA = [
         "price": 28.00,
         "stock": 50,
         "category_id": 3,
-        "local_image_path": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
-        "image_url": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
         "is_active": True,
         "sort_order": 1
     },
@@ -34,8 +41,6 @@ PRODUCTS_DATA = [
         "price": 58.00,
         "stock": 30,
         "category_id": 3,
-        "local_image_path": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
-        "image_url": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
         "is_active": True,
         "sort_order": 2
     },
@@ -45,8 +50,6 @@ PRODUCTS_DATA = [
         "price": 32.00,
         "stock": 40,
         "category_id": 3,
-        "local_image_path": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
-        "image_url": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
         "is_active": True,
         "sort_order": 3
     },
@@ -56,8 +59,6 @@ PRODUCTS_DATA = [
         "price": 35.00,
         "stock": 45,
         "category_id": 3,
-        "local_image_path": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
-        "image_url": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
         "is_active": True,
         "sort_order": 4
     },
@@ -67,8 +68,6 @@ PRODUCTS_DATA = [
         "price": 15.00,
         "stock": 100,
         "category_id": 3,
-        "local_image_path": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
-        "image_url": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
         "is_active": True,
         "sort_order": 5
     },
@@ -78,8 +77,6 @@ PRODUCTS_DATA = [
         "price": 2.00,
         "stock": 200,
         "category_id": 3,
-        "local_image_path": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
-        "image_url": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
         "is_active": True,
         "sort_order": 6
     },
@@ -89,8 +86,6 @@ PRODUCTS_DATA = [
         "price": 22.00,
         "stock": 60,
         "category_id": 3,
-        "local_image_path": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
-        "image_url": "/images/products/4e94c936-4c85-408b-a336-0fc20d59144b.png",
         "is_active": True,
         "sort_order": 7
     },
@@ -102,8 +97,6 @@ PRODUCTS_DATA = [
         "price": 8.00,
         "stock": 80,
         "category_id": 4,
-        "local_image_path": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
-        "image_url": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
         "is_active": True,
         "sort_order": 1
     },
@@ -113,8 +106,6 @@ PRODUCTS_DATA = [
         "price": 6.00,
         "stock": 100,
         "category_id": 4,
-        "local_image_path": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
-        "image_url": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
         "is_active": True,
         "sort_order": 2
     },
@@ -124,8 +115,6 @@ PRODUCTS_DATA = [
         "price": 10.00,
         "stock": 70,
         "category_id": 4,
-        "local_image_path": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
-        "image_url": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
         "is_active": True,
         "sort_order": 3
     },
@@ -135,8 +124,6 @@ PRODUCTS_DATA = [
         "price": 38.00,
         "stock": 40,
         "category_id": 4,
-        "local_image_path": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
-        "image_url": "/images/products/e8087f54-85bc-4b1a-ac0b-b9f22719cf95.jpg",
         "is_active": True,
         "sort_order": 4
     },
@@ -148,8 +135,6 @@ PRODUCTS_DATA = [
         "price": 12.00,
         "stock": 60,
         "category_id": 5,
-        "local_image_path": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
-        "image_url": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
         "is_active": True,
         "sort_order": 1
     },
@@ -159,8 +144,6 @@ PRODUCTS_DATA = [
         "price": 8.00,
         "stock": 90,
         "category_id": 5,
-        "local_image_path": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
-        "image_url": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
         "is_active": True,
         "sort_order": 2
     },
@@ -170,8 +153,6 @@ PRODUCTS_DATA = [
         "price": 15.00,
         "stock": 70,
         "category_id": 5,
-        "local_image_path": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
-        "image_url": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
         "is_active": True,
         "sort_order": 3
     },
@@ -181,8 +162,6 @@ PRODUCTS_DATA = [
         "price": 6.00,
         "stock": 100,
         "category_id": 5,
-        "local_image_path": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
-        "image_url": "/images/products/64a389d2-26a3-4fd4-a9b1-38c4a2fdd122.png",
         "is_active": True,
         "sort_order": 4
     },
@@ -194,8 +173,6 @@ PRODUCTS_DATA = [
         "price": 12.00,
         "stock": 50,
         "category_id": 6,
-        "local_image_path": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
-        "image_url": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
         "is_active": True,
         "sort_order": 1
     },
@@ -205,8 +182,6 @@ PRODUCTS_DATA = [
         "price": 48.00,
         "stock": 35,
         "category_id": 6,
-        "local_image_path": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
-        "image_url": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
         "is_active": True,
         "sort_order": 2
     },
@@ -216,8 +191,6 @@ PRODUCTS_DATA = [
         "price": 10.00,
         "stock": 60,
         "category_id": 6,
-        "local_image_path": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
-        "image_url": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
         "is_active": True,
         "sort_order": 3
     },
@@ -227,8 +200,6 @@ PRODUCTS_DATA = [
         "price": 18.00,
         "stock": 40,
         "category_id": 6,
-        "local_image_path": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
-        "image_url": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
         "is_active": True,
         "sort_order": 4
     },
@@ -238,8 +209,6 @@ PRODUCTS_DATA = [
         "price": 16.00,
         "stock": 50,
         "category_id": 6,
-        "local_image_path": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
-        "image_url": "/images/products/c6b14e69-d28d-43fc-83df-b77b52579674.png",
         "is_active": True,
         "sort_order": 5
     },
@@ -258,14 +227,24 @@ async def batch_insert_products():
             count = result.scalar() or 0
             print(f"当前商品数量: {count}")
 
-            # 批量创建商品
+            # 批量创建商品（轮询分配图片）
             products_created = 0
-            for product_data in PRODUCTS_DATA:
+            for idx, product_data in enumerate(PRODUCTS_DATA):
                 try:
-                    product = Product(**product_data)
+                    # 轮询分配图片
+                    image_path = AVAILABLE_IMAGES[idx % len(AVAILABLE_IMAGES)]
+
+                    # 添加图片路径到商品数据
+                    product_with_image = {
+                        **product_data,
+                        "local_image_path": image_path,
+                        "image_url": image_path
+                    }
+
+                    product = Product(**product_with_image)
                     db.add(product)
                     products_created += 1
-                    print(f"  添加商品: {product_data['title']} - ¥{product_data['price']}")
+                    print(f"  添加商品: {product_data['title']} - ¥{product_data['price']} - 图片: {image_path.split('/')[-1]}")
                 except Exception as e:
                     print(f"  添加商品失败 {product_data['title']}: {e}")
 
