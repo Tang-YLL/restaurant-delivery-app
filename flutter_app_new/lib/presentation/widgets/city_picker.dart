@@ -289,19 +289,16 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
           selected: isSelected,
           selectedTileColor: Colors.orange[50],
           onTap: () {
-            setState(() {
-              _selectedDistrict = district;
-            });
-            // 自动关闭并返回结果
+            // 直接返回结果，不需要setState（因为马上要关闭了）
             final result = <String, String>{
               'province': _selectedProvince!,
               'city': _selectedCity!,
-              'district': _selectedDistrict!,
+              'district': district,
             };
             widget.onConfirm(
               _selectedProvince!,
               _selectedCity!,
-              _selectedDistrict!,
+              district,
             );
             Navigator.of(context).pop(result);
           },
