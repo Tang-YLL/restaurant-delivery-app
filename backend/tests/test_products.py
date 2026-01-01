@@ -12,7 +12,7 @@ class TestProducts:
     @pytest.mark.asyncio
     async def test_get_products(self, client: AsyncClient):
         """测试获取商品列表"""
-        response = await client.get("/api/v1/products")
+        response = await client.get("/api/products")
         assert response.status_code == 200
         data = response.json()
         assert "products" in data
@@ -22,7 +22,7 @@ class TestProducts:
     @pytest.mark.asyncio
     async def test_get_products_with_pagination(self, client: AsyncClient):
         """测试分页获取商品"""
-        response = await client.get("/api/v1/products?page=1&page_size=10")
+        response = await client.get("/api/products?page=1&page_size=10")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data["products"], list)
@@ -32,7 +32,7 @@ class TestProducts:
     @pytest.mark.asyncio
     async def test_get_products_with_category_filter(self, client: AsyncClient):
         """测试按分类筛选商品"""
-        response = await client.get("/api/v1/products?category_id=1")
+        response = await client.get("/api/products?category_id=1")
         assert response.status_code == 200
         data = response.json()
         assert "products" in data
@@ -41,16 +41,16 @@ class TestProducts:
     async def test_get_products_with_sort(self, client: AsyncClient):
         """测试商品排序"""
         # 价格升序
-        response = await client.get("/api/v1/products?sort_by=price_asc")
+        response = await client.get("/api/products?sort_by=price_asc")
         assert response.status_code == 200
         # 销量排序
-        response = await client.get("/api/v1/products?sort_by=sales")
+        response = await client.get("/api/products?sort_by=sales")
         assert response.status_code == 200
 
     @pytest.mark.asyncio
     async def test_search_products(self, client: AsyncClient):
         """测试搜索商品"""
-        response = await client.get("/api/v1/products/search/test")
+        response = await client.get("/api/products/search/test")
         assert response.status_code == 200
         data = response.json()
         assert "products" in data
@@ -59,7 +59,7 @@ class TestProducts:
     @pytest.mark.asyncio
     async def test_get_hot_products(self, client: AsyncClient):
         """测试获取热销商品"""
-        response = await client.get("/api/v1/products/hot?limit=10")
+        response = await client.get("/api/products/hot?limit=10")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -68,7 +68,7 @@ class TestProducts:
     async def test_get_product_detail(self, client: AsyncClient):
         """测试获取商品详情"""
         # 先创建一个商品
-        response = await client.get("/api/v1/products/1")
+        response = await client.get("/api/products/1")
         # 如果商品不存在会返回404
         assert response.status_code in [200, 404]
 
@@ -79,7 +79,7 @@ class TestCategories:
     @pytest.mark.asyncio
     async def test_get_categories(self, client: AsyncClient):
         """测试获取分类列表"""
-        response = await client.get("/api/v1/categories")
+        response = await client.get("/api/categories")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -87,14 +87,14 @@ class TestCategories:
     @pytest.mark.asyncio
     async def test_get_category_detail(self, client: AsyncClient):
         """测试获取分类详情"""
-        response = await client.get("/api/v1/categories/1")
+        response = await client.get("/api/categories/1")
         assert response.status_code in [200, 404]
 
     @pytest.mark.asyncio
     async def test_create_category_unauthorized(self, client: AsyncClient):
         """测试未授权创建分类"""
         response = await client.post(
-            "/api/v1/categories",
+            "/api/categories",
             json={
                 "name": "测试分类",
                 "code": "test_category",
@@ -107,7 +107,7 @@ class TestCategories:
     async def test_update_category_unauthorized(self, client: AsyncClient):
         """测试未授权更新分类"""
         response = await client.put(
-            "/api/v1/categories/1",
+            "/api/categories/1",
             json={"name": "更新后的分类名"}
         )
         assert response.status_code == 403
@@ -115,7 +115,7 @@ class TestCategories:
     @pytest.mark.asyncio
     async def test_delete_category_unauthorized(self, client: AsyncClient):
         """测试未授权删除分类"""
-        response = await client.delete("/api/v1/categories/1")
+        response = await client.delete("/api/categories/1")
         assert response.status_code == 403
 
 
@@ -125,14 +125,14 @@ class TestCart:
     @pytest.mark.asyncio
     async def test_get_cart_unauthorized(self, client: AsyncClient):
         """测试未授权访问购物车"""
-        response = await client.get("/api/v1/cart")
+        response = await client.get("/api/cart")
         assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_add_to_cart_unauthorized(self, client: AsyncClient):
         """测试未授权添加到购物车"""
         response = await client.post(
-            "/api/v1/cart",
+            "/api/cart",
             json={
                 "product_id": 1,
                 "quantity": 2
@@ -144,7 +144,7 @@ class TestCart:
     async def test_update_cart_unauthorized(self, client: AsyncClient):
         """测试未授权更新购物车"""
         response = await client.put(
-            "/api/v1/cart/1",
+            "/api/cart/1",
             json={"quantity": 3}
         )
         assert response.status_code == 403
@@ -152,13 +152,13 @@ class TestCart:
     @pytest.mark.asyncio
     async def test_remove_from_cart_unauthorized(self, client: AsyncClient):
         """测试未授权删除购物车商品"""
-        response = await client.delete("/api/v1/cart/1")
+        response = await client.delete("/api/cart/1")
         assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_clear_cart_unauthorized(self, client: AsyncClient):
         """测试未授权清空购物车"""
-        response = await client.delete("/api/v1/cart")
+        response = await client.delete("/api/cart")
         assert response.status_code == 403
 
 

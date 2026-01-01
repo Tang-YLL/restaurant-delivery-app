@@ -12,9 +12,9 @@ class TestCart:
     async def test_add_to_cart(self, client: AsyncClient, test_user_data: dict):
         """测试添加商品到购物车"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -24,7 +24,7 @@ class TestCart:
 
         # 添加到购物车
         response = await client.post(
-            "/api/v1/cart",
+            "/api/cart",
             json={
                 "product_id": 1,
                 "quantity": 2
@@ -37,9 +37,9 @@ class TestCart:
     async def test_get_cart(self, client: AsyncClient, test_user_data: dict):
         """测试获取购物车"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -49,7 +49,7 @@ class TestCart:
 
         # 获取购物车
         response = await client.get(
-            "/api/v1/cart",
+            "/api/cart",
             headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == 200
@@ -58,9 +58,9 @@ class TestCart:
     async def test_update_cart_item(self, client: AsyncClient, test_user_data: dict):
         """测试更新购物车商品数量"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -70,7 +70,7 @@ class TestCart:
 
         # 更新购物车商品
         response = await client.put(
-            "/api/v1/cart/1",
+            "/api/cart/1",
             json={"quantity": 3},
             headers={"Authorization": f"Bearer {token}"}
         )
@@ -80,9 +80,9 @@ class TestCart:
     async def test_delete_cart_item(self, client: AsyncClient, test_user_data: dict):
         """测试删除购物车商品"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -92,7 +92,7 @@ class TestCart:
 
         # 删除购物车商品
         response = await client.delete(
-            "/api/v1/cart/1",
+            "/api/cart/1",
             headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code in [200, 204, 404]
@@ -101,9 +101,9 @@ class TestCart:
     async def test_clear_cart(self, client: AsyncClient, test_user_data: dict):
         """测试清空购物车"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -113,7 +113,7 @@ class TestCart:
 
         # 清空购物车
         response = await client.delete(
-            "/api/v1/cart",
+            "/api/cart",
             headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code in [200, 204]

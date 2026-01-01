@@ -18,7 +18,7 @@ from app.core.exceptions import (
     validation_exception_handler, sqlalchemy_exception_handler,
     general_exception_handler
 )
-from app.api import auth, users, products, categories, cart, orders, reviews
+from app.api import auth, users, products, categories, cart, orders, reviews, admin_auth
 from app.api.admin import orders as admin_orders, analytics, users as admin_users, reviews as admin_reviews, audit_logs, products as admin_products
 
 settings = get_settings()
@@ -69,6 +69,7 @@ app.mount("/static", StaticFiles(directory=settings.STATIC_FILES_PATH), name="st
 
 # 注册API路由
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
+app.include_router(admin_auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router, prefix=settings.API_V1_PREFIX)
 app.include_router(products.router, prefix=settings.API_V1_PREFIX)
 app.include_router(categories.router, prefix=settings.API_V1_PREFIX)

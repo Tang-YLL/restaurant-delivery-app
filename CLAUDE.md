@@ -14,3 +14,5 @@ Always run tests before committing:
 ## Code Style
 
 Follow existing patterns in the codebase.
+
+## 忽略github

@@ -12,9 +12,9 @@ class TestReviews:
     async def test_create_review(self, client: AsyncClient, test_user_data: dict):
         """测试创建评价"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -24,7 +24,7 @@ class TestReviews:
 
         # 创建评价
         response = await client.post(
-            "/api/v1/reviews",
+            "/api/reviews",
             json={
                 "order_id": 1,
                 "product_id": 1,
@@ -38,7 +38,7 @@ class TestReviews:
     @pytest.mark.asyncio
     async def test_get_product_reviews(self, client: AsyncClient):
         """测试获取商品评价"""
-        response = await client.get("/api/v1/reviews/product/1")
+        response = await client.get("/api/reviews/product/1")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
@@ -47,9 +47,9 @@ class TestReviews:
     async def test_get_user_reviews(self, client: AsyncClient, test_user_data: dict):
         """测试获取用户评价"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -59,7 +59,7 @@ class TestReviews:
 
         # 获取用户评价
         response = await client.get(
-            "/api/v1/reviews/user",
+            "/api/reviews/user",
             headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code == 200
@@ -68,9 +68,9 @@ class TestReviews:
     async def test_update_review(self, client: AsyncClient, test_user_data: dict):
         """测试更新评价"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -80,7 +80,7 @@ class TestReviews:
 
         # 更新评价
         response = await client.put(
-            "/api/v1/reviews/1",
+            "/api/reviews/1",
             json={
                 "rating": 4,
                 "content": "更新后的评价内容"
@@ -93,9 +93,9 @@ class TestReviews:
     async def test_delete_review(self, client: AsyncClient, test_user_data: dict):
         """测试删除评价"""
         # 注册并登录
-        await client.post("/api/v1/auth/register", json=test_user_data)
+        await client.post("/api/auth/register", json=test_user_data)
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/api/auth/login",
             json={
                 "phone": test_user_data["phone"],
                 "password": test_user_data["password"]
@@ -105,7 +105,7 @@ class TestReviews:
 
         # 删除评价
         response = await client.delete(
-            "/api/v1/reviews/1",
+            "/api/reviews/1",
             headers={"Authorization": f"Bearer {token}"}
         )
         assert response.status_code in [200, 204, 403, 404]
@@ -118,14 +118,14 @@ class TestAdminReviews:
     async def test_admin_get_all_reviews(self, client: AsyncClient):
         """测试管理员获取所有评价"""
         # 需要管理员token
-        response = await client.get("/api/v1/admin/reviews")
+        response = await client.get("/api/admin/reviews")
         assert response.status_code in [200, 401, 403]
 
     @pytest.mark.asyncio
     async def test_admin_delete_review(self, client: AsyncClient):
         """测试管理员删除评价"""
         # 需要管理员token
-        response = await client.delete("/api/v1/admin/reviews/1")
+        response = await client.delete("/api/admin/reviews/1")
         assert response.status_code in [200, 204, 401, 403]
 
     @pytest.mark.asyncio
@@ -133,7 +133,7 @@ class TestAdminReviews:
         """测试管理员回复评价"""
         # 需要管理员token
         response = await client.post(
-            "/api/v1/admin/reviews/1/reply",
+            "/api/admin/reviews/1/reply",
             json={"reply": "感谢您的评价!"}
         )
         assert response.status_code in [200, 201, 401, 403]
