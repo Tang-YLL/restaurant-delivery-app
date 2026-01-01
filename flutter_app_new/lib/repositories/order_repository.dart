@@ -16,16 +16,28 @@ class OrderRepository {
     String? remark,
   }) async {
     try {
+      // 根据配送类型确定字段名
+      final data = <String, dynamic>{
+        'items': items,
+        'delivery_type': deliveryType,
+        'remark': remark,
+      };
+
+      // 外卖配送
+      if (deliveryType == 'delivery') {
+        data['delivery_address'] = deliveryAddress;
+        data['pickup_name'] = contactName;
+        data['pickup_phone'] = contactPhone;
+      }
+      // 到店自取
+      else {
+        data['pickup_name'] = contactName;
+        data['pickup_phone'] = contactPhone;
+      }
+
       final response = await _dio.post(
         '/orders',
-        data: {
-          'items': items,
-          'delivery_type': deliveryType,
-          'delivery_address': deliveryAddress,
-          'contact_name': contactName,
-          'contact_phone': contactPhone,
-          'remark': remark,
-        },
+        data: data,
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {

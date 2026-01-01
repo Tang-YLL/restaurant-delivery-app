@@ -61,22 +61,35 @@ class OrderProvider with ChangeNotifier {
     String? remark,
   }) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await _repository.createOrder(
-        items: items.map((item) => {
+      debugPrint('🔍 开始创建订单...');
+      debugPrint('🔍 商品数量: ${items.length}');
+      debugPrint('🔍 配送方式: ${deliveryType.value}');
+      debugPrint('🔍 联系人: $contactName, $contactPhone');
+
+      final itemsData = items.map((item) {
+        debugPrint('🔍 商品: ${item.product.name}, 数量: ${item.quantity}');
+        return {
           'id': item.id,
           'product': item.product.toJson(),
           'quantity': item.quantity,
           'price': item.product.price,
-        }).toList(),
+        };
+      }).toList();
+
+      final response = await _repository.createOrder(
+        items: itemsData,
         deliveryType: deliveryType.value,
         deliveryAddress: deliveryAddress,
         contactName: contactName,
         contactPhone: contactPhone,
         remark: remark,
       );
+
+      debugPrint('🔍 API响应: success=${response.success}, data=${response.data}');
 
       if (response.success && response.data != null) {
         _currentOrder = Order.fromJson(response.data!);
@@ -85,11 +98,15 @@ class OrderProvider with ChangeNotifier {
         notifyListeners();
         return true;
       }
+
+      _errorMessage = response.message ?? '创建订单失败';
       _isLoading = false;
       notifyListeners();
       return false;
-    } catch (e) {
-      debugPrint('创建订单失败: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ 创建订单异常: $e');
+      debugPrint('❌ 堆栈: $stackTrace');
+      _errorMessage = '创建订单失败: $e';
       _isLoading = false;
       notifyListeners();
       return false;
