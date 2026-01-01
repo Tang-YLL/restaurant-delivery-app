@@ -15,7 +15,10 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    _initApp();
+    // 使用addPostFrameCallback确保在widget构建完成后再执行
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initApp();
+    });
   }
 
   Future<void> _initApp() async {

@@ -52,6 +52,8 @@
               fit="cover"
               style="width: 60px; height: 60px"
               :preview-src-list="row.images"
+              :z-index="9999"
+              :preview-teleported="true"
             />
           </template>
         </el-table-column>

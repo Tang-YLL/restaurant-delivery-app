@@ -22,9 +22,7 @@ class AuthProvider with ChangeNotifier {
   String? get token => _token;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
 
-  AuthProvider() {
-    initAuth();
-  }
+  AuthProvider();
 
   /// 初始化认证状态
   Future<void> initAuth() async {
