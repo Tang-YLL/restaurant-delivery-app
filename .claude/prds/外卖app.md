@@ -1,16 +1,16 @@
 ---
 name: 外卖app
-description: 快餐连锁店自有外卖配送系统，包含Flutter移动端用户App、Vue3管理后台和Python后端API
+description: 中餐厅自有外卖配送系统，包含Flutter移动端用户App、Vue3管理后台和Python后端API
 status: backlog
 created: 2025-12-31T13:18:05Z
-updated: 2025-12-31T15:16:57Z
+updated: 2025-12-31T23:59:00Z
 ---
 
-# PRD: 快餐连锁店自有外卖配送系统
+# PRD: 中餐厅自有外卖配送系统
 
 ## Executive Summary
 
-为单一快餐连锁品牌打造的自有外卖配送平台，旨在减少对第三方外卖平台的依赖，提升用户体验和品牌粘性。系统包含Flutter移动端用户App、Vue3管理后台和Python后端API服务，支持外卖配送和到店自取两种订单类型，目标首期日订单量100-500单。
+为单一中餐品牌打造的自有外卖配送平台，旨在减少对第三方外卖平台的依赖，提升用户体验和品牌粘性。系统包含Flutter移动端用户App、Vue3管理后台和Python后端API服务，支持外卖配送和到店自取两种订单类型，目标首期日订单量100-500单。
 
 ## Problem Statement
 

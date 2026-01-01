@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 from decimal import Decimal
+from enum import Enum
 
 
 # ==================== 用户相关Schema ====================
@@ -138,7 +139,7 @@ class CategoryResponse(BaseModel):
 
 
 # ==================== 商品相关Schema ====================
-class ProductStatus(str, str):
+class ProductStatus(str, Enum):
     """商品状态枚举"""
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -237,13 +238,13 @@ class CartItemResponse(BaseModel):
 
 
 # ==================== 订单相关Schema ====================
-class DeliveryType(str, str):
+class DeliveryType(str, Enum):
     """配送类型枚举"""
     DELIVERY = "delivery"
     PICKUP = "pickup"
 
 
-class OrderStatus(str, str):
+class OrderStatus(str, Enum):
     """订单状态枚举"""
     PENDING = "pending"
     PAID = "paid"

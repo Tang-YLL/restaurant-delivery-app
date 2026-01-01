@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/cart_provider.dart';
@@ -11,8 +12,14 @@ import 'presentation/providers/favorite_provider.dart';
 import 'presentation/providers/review_provider.dart';
 import 'presentation/routes/app_routes.dart';
 import 'presentation/routes/route_generator.dart';
+import 'core/config/hive_config.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化Hive
+  await HiveConfig.init();
+
   runApp(const FoodDeliveryApp());
 
   // 设置状态栏样式

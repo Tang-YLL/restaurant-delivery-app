@@ -2,7 +2,7 @@
 name: 外卖app
 status: completed
 created: 2025-12-31T13:44:17Z
-updated: 2025-12-31T23:59:00Z
+updated: 2026-01-01T00:00:00Z
 progress: 100%
 prd: .claude/prds/外卖app.md
 github: [Will be updated when synced to GitHub]
@@ -11,7 +11,7 @@ completed: 13
 pending: 0
 ---
 
-# Epic: 快餐连锁店外卖配送系统
+# Epic: 中餐厅外卖配送系统
 
 ## Overview
 

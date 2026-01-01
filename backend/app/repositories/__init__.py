@@ -2,7 +2,7 @@
 Repository层 - 数据访问层
 负责与数据库交互,提供CRUD操作
 """
-from typing import List, Optional, TypeVar, Generic
+from typing import List, Optional, TypeVar, Generic, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload

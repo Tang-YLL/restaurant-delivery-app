@@ -1,6 +1,27 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, List, Union
+from pydantic import field_validator
+import json
+import ast
+
+
+def parse_list_env(value: str) -> list:
+    """解析列表格式的环境变量"""
+    if isinstance(value, list):
+        return value
+    if not value:
+        return []
+    try:
+        # 尝试解析JSON格式
+        return json.loads(value)
+    except:
+        try:
+            # 尝试解析Python字面量格式
+            return ast.literal_eval(value)
+        except:
+            # 如果都失败，按逗号分割
+            return [item.strip() for item in value.split(",")]
 
 
 class Settings(BaseSettings):
@@ -40,14 +61,23 @@ class Settings(BaseSettings):
     PRODUCT_LIST_CACHE_TTL: int = 600  # 10分钟
 
     # CORS配置
-    CORS_ORIGINS: list = ["*"]
+    CORS_ORIGINS: Union[str, list] = ["*"]
     CORS_ALLOW_CREDENTIALS: bool = True
-    CORS_ALLOW_METHODS: list = ["*"]
-    CORS_ALLOW_HEADERS: list = ["*"]
+    CORS_ALLOW_METHODS: Union[str, list] = ["*"]
+    CORS_ALLOW_HEADERS: Union[str, list] = ["*"]
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    @field_validator('CORS_ORIGINS', 'CORS_ALLOW_METHODS', 'CORS_ALLOW_HEADERS', mode='before')
+    @classmethod
+    def parse_cors_lists(cls, v):
+        if isinstance(v, list):
+            return v
+        return parse_list_env(v)
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"
+    )
 
 
 @lru_cache()

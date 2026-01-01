@@ -45,7 +45,7 @@ services:
   # FastAPI后端
   backend:
     build:
-      context: ./backend
+      context: ../backend
       dockerfile: Dockerfile
     container_name: restaurant_backend
     environment:
