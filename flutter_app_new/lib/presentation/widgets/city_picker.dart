@@ -285,7 +285,6 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
           selectedTileColor: Colors.orange[50],
           onTap: () {
             // 只调用回调，由回调中的sheetContext来pop
-            print('🔍 District tapped: $_selectedProvince, $_selectedCity, $district');
             widget.onConfirm(
               _selectedProvince!,
               _selectedCity!,
@@ -310,29 +309,34 @@ Future<Map<String, String>?> showCityPicker(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
-      return Container(
-        height: 400,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(16),
-        child: CityPicker(
-          initialProvince: initialProvince,
-          initialCity: initialCity,
-          initialDistrict: initialDistrict,
-          onConfirm: (province, city, district) {
-            // 使用sheetContext来返回数据
-            print('🔍 onConfirm called: $province, $city, $district');
-            final result = <String, String>{
-              'province': province,
-              'city': city,
-              'district': district,
-            };
-            print('🔍 Popping with result: $result');
-            Navigator.of(sheetContext).pop(result);
-          },
-        ),
+      return Wrap(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+            ),
+            child: CityPicker(
+              initialProvince: initialProvince,
+              initialCity: initialCity,
+              initialDistrict: initialDistrict,
+              onConfirm: (province, city, district) {
+                final result = <String, String>{
+                  'province': province,
+                  'city': city,
+                  'district': district,
+                };
+                Navigator.of(sheetContext).pop(result);
+              },
+            ),
+          ),
+        ],
       );
     },
   );
