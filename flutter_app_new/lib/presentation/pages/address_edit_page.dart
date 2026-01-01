@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/address_provider.dart';
 import '../../data/models/address.dart';
+import '../widgets/city_picker.dart';
 
 /// 地址编辑页面
 class AddressEditPage extends StatefulWidget {
@@ -20,9 +21,9 @@ class _AddressEditPageState extends State<AddressEditPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
-  late TextEditingController _provinceController;
-  late TextEditingController _cityController;
-  late TextEditingController _districtController;
+  String? _province;
+  String? _city;
+  String? _district;
   late TextEditingController _detailController;
   late String _addressType;
   bool _isDefault = false;
@@ -32,9 +33,9 @@ class _AddressEditPageState extends State<AddressEditPage> {
     super.initState();
     _nameController = TextEditingController(text: widget.address?.contactName ?? '');
     _phoneController = TextEditingController(text: widget.address?.contactPhone ?? '');
-    _provinceController = TextEditingController(text: widget.address?.province ?? '');
-    _cityController = TextEditingController(text: widget.address?.city ?? '');
-    _districtController = TextEditingController(text: widget.address?.district ?? '');
+    _province = widget.address?.province;
+    _city = widget.address?.city;
+    _district = widget.address?.district;
     _detailController = TextEditingController(text: widget.address?.detailAddress ?? '');
     _addressType = widget.address?.addressType ?? 'other';
     _isDefault = widget.address?.isDefault ?? false;
@@ -44,9 +45,6 @@ class _AddressEditPageState extends State<AddressEditPage> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _provinceController.dispose();
-    _cityController.dispose();
-    _districtController.dispose();
     _detailController.dispose();
     super.dispose();
   }
@@ -107,60 +105,49 @@ class _AddressEditPageState extends State<AddressEditPage> {
             const SizedBox(height: 16),
 
             // 省市区选择
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _provinceController,
-                    decoration: const InputDecoration(
-                      labelText: '省份',
-                      hintText: '省',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return '请选择省份';
-                      }
-                      return null;
-                    },
+            InkWell(
+              onTap: () async {
+                final result = await showCityPicker(
+                  context,
+                  initialProvince: _province,
+                  initialCity: _city,
+                  initialDistrict: _district,
+                );
+                if (result != null) {
+                  setState(() {
+                    _province = result['province'];
+                    _city = result['city'];
+                    _district = result['district'];
+                  });
+                }
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: '省市区',
+                  hintText: '请选择省市区',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_city),
+                ),
+                child: Text(
+                  _province != null && _city != null && _district != null
+                      ? '$_province $_city $_district'
+                      : '请选择省市区',
+                  style: TextStyle(
+                    color: _province != null ? Colors.black : Colors.grey,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: _cityController,
-                    decoration: const InputDecoration(
-                      labelText: '城市',
-                      hintText: '市',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return '请选择城市';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: _districtController,
-                    decoration: const InputDecoration(
-                      labelText: '区县',
-                      hintText: '区',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return '请选择区县';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
+
+            // 省市区验证器
+            if (_province == null || _city == null || _district == null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 12),
+                child: Text(
+                  '请选择省市区',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+                ),
+              ),
 
             const SizedBox(height: 16),
 
@@ -251,6 +238,14 @@ class _AddressEditPageState extends State<AddressEditPage> {
   }
 
   Future<void> _saveAddress() async {
+    // 验证省市区
+    if (_province == null || _city == null || _district == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请选择省市区')),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -263,9 +258,9 @@ class _AddressEditPageState extends State<AddressEditPage> {
       userId: 'current_user_id', // 从AuthProvider获取
       contactName: _nameController.text.trim(),
       contactPhone: _phoneController.text.trim(),
-      province: _provinceController.text.trim(),
-      city: _cityController.text.trim(),
-      district: _districtController.text.trim(),
+      province: _province!,
+      city: _city!,
+      district: _district!,
       detailAddress: _detailController.text.trim(),
       isDefault: _isDefault,
       addressType: _addressType,

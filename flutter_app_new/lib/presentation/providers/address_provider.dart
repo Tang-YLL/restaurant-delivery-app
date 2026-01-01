@@ -42,20 +42,30 @@ class AddressProvider with ChangeNotifier {
         notifyListeners();
       }
 
-      // 从API获取最新数据
-      final response = await ApiService.get('/addresses');
+      // 尝试从API获取最新数据（如果失败则使用本地缓存）
+      try {
+        final response = await ApiService.get('/addresses');
 
-      if (response.success && response.data != null) {
-        _addresses = (response.data! as List)
-            .map((item) => Address.fromJson(item as Map<String, dynamic>))
-            .toList();
+        if (response.success && response.data != null) {
+          final apiAddresses = (response.data! as List)
+              .map((item) => Address.fromJson(item as Map<String, dynamic>))
+              .toList();
 
-        // 缓存到本地
-        await StorageUtil.setString(
-          'addressBox',
-          'addresses',
-          jsonEncode(_addresses.map((a) => a.toJson()).toList()),
-        );
+          // 如果API返回数据，使用API数据
+          if (apiAddresses.isNotEmpty) {
+            _addresses = apiAddresses;
+
+            // 缓存到本地
+            await StorageUtil.setString(
+              'addressBox',
+              'addresses',
+              jsonEncode(_addresses.map((a) => a.toJson()).toList()),
+            );
+          }
+        }
+      } catch (apiError) {
+        // API调用失败，使用本地缓存数据
+        debugPrint('API调用失败，使用本地缓存: $apiError');
       }
     } catch (e) {
       _errorMessage = '加载地址失败: $e';
@@ -73,30 +83,36 @@ class AddressProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiService.post('/addresses', data: address.toJson());
-
-      if (response.success && response.data != null) {
-        final newAddress = Address.fromJson(response.data!);
-
-        // 如果是默认地址,取消其他默认地址
-        if (newAddress.isDefault) {
-          for (var i = 0; i < _addresses.length; i++) {
-            _addresses[i] = _addresses[i].copyWith(isDefault: false);
-          }
+      // 如果是默认地址,取消其他默认地址
+      if (address.isDefault) {
+        for (var i = 0; i < _addresses.length; i++) {
+          _addresses[i] = _addresses[i].copyWith(isDefault: false);
         }
-
-        _addresses.add(newAddress);
-        await _saveToCache();
-
-        _isLoading = false;
-        notifyListeners();
-        return true;
       }
 
-      _errorMessage = response.message ?? '添加地址失败';
+      // 先保存到本地
+      _addresses.add(address);
+      await _saveToCache();
       _isLoading = false;
       notifyListeners();
-      return false;
+
+      // 尝试同步到服务器（失败也返回成功，因为本地已保存）
+      try {
+        final response = await ApiService.post('/addresses', data: address.toJson());
+        if (response.success && response.data != null) {
+          // 如果服务器返回了新地址（比如生成了ID），更新本地地址
+          final serverAddress = Address.fromJson(response.data!);
+          final index = _addresses.indexWhere((a) => a.id == address.id);
+          if (index >= 0) {
+            _addresses[index] = serverAddress;
+            await _saveToCache();
+          }
+        }
+      } catch (apiError) {
+        debugPrint('同步地址到服务器失败: $apiError');
+      }
+
+      return true;
     } catch (e) {
       _errorMessage = '添加地址失败: $e';
       debugPrint('添加地址失败: $e');
@@ -113,32 +129,39 @@ class AddressProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiService.put(
-        '/addresses/${address.id}',
-        data: address.toJson(),
-      );
+      final index = _addresses.indexWhere((a) => a.id == address.id);
 
-      if (response.success) {
-        final index = _addresses.indexWhere((a) => a.id == address.id);
-
-        if (index >= 0) {
-          // 如果设置为默认地址,取消其他默认地址
-          if (address.isDefault) {
-            for (var i = 0; i < _addresses.length; i++) {
-              _addresses[i] = _addresses[i].copyWith(isDefault: false);
-            }
+      if (index >= 0) {
+        // 如果设置为默认地址,取消其他默认地址
+        if (address.isDefault) {
+          for (var i = 0; i < _addresses.length; i++) {
+            _addresses[i] = _addresses[i].copyWith(isDefault: false);
           }
-
-          _addresses[index] = address;
-          await _saveToCache();
         }
 
+        // 先更新本地
+        _addresses[index] = address;
+        await _saveToCache();
         _isLoading = false;
         notifyListeners();
+
+        // 尝试同步到服务器
+        try {
+          final response = await ApiService.put(
+            '/addresses/${address.id}',
+            data: address.toJson(),
+          );
+          if (!response.success) {
+            debugPrint('同步地址更新到服务器失败: ${response.message}');
+          }
+        } catch (apiError) {
+          debugPrint('同步地址更新到服务器失败: $apiError');
+        }
+
         return true;
       }
 
-      _errorMessage = response.message ?? '更新地址失败';
+      _errorMessage = '地址不存在';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -158,27 +181,26 @@ class AddressProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await ApiService.delete('/addresses/$addressId');
+      // 先从本地删除
+      _addresses.removeWhere((a) => a.id == addressId);
 
-      if (response.success) {
-        _addresses.removeWhere((a) => a.id == addressId);
-
-        // 如果删除的是选中的地址,清除选中状态
-        if (_selectedAddress?.id == addressId) {
-          _selectedAddress = null;
-        }
-
-        await _saveToCache();
-
-        _isLoading = false;
-        notifyListeners();
-        return true;
+      // 如果删除的是选中的地址,清除选中状态
+      if (_selectedAddress?.id == addressId) {
+        _selectedAddress = null;
       }
 
-      _errorMessage = response.message ?? '删除地址失败';
+      await _saveToCache();
       _isLoading = false;
       notifyListeners();
-      return false;
+
+      // 尝试同步到服务器
+      try {
+        ApiService.delete('/addresses/$addressId');
+      } catch (apiError) {
+        debugPrint('同步地址删除到服务器失败: $apiError');
+      }
+
+      return true;
     } catch (e) {
       _errorMessage = '删除地址失败: $e';
       debugPrint('删除地址失败: $e');

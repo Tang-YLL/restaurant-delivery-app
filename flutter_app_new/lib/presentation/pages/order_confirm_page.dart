@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
+import '../providers/address_provider.dart';
 import '../../data/models/order.dart';
+import '../../data/models/address.dart';
 import 'package:intl/intl.dart';
 
 /// 确认订单页面
@@ -20,6 +22,16 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _remarkController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  Address? _selectedAddress;
+
+  @override
+  void initState() {
+    super.initState();
+    // 加载地址列表并选择默认地址
+    Future.microtask(() {
+      context.read<AddressProvider>().loadAddresses();
+    });
+  }
 
   @override
   void dispose() {
@@ -28,6 +40,115 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
     _phoneController.dispose();
     _remarkController.dispose();
     super.dispose();
+  }
+
+  /// 选择地址
+  void _selectAddress(Address address) {
+    setState(() {
+      _selectedAddress = address;
+      _addressController.text = address.fullAddress;
+      _nameController.text = address.contactName;
+      _phoneController.text = address.contactPhone;
+    });
+    Navigator.pop(context);
+  }
+
+  /// 显示地址选择器
+  void _showAddressSelector() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Consumer<AddressProvider>(
+          builder: (context, addressProvider, _) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.6,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '选择收货地址',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: addressProvider.addresses.isEmpty
+                        ? const Center(child: Text('暂无地址'))
+                        : ListView.builder(
+                            itemCount: addressProvider.addresses.length,
+                            itemBuilder: (context, index) {
+                              final address = addressProvider.addresses[index];
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: ListTile(
+                                  title: Text(
+                                    address.contactName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(address.contactPhone),
+                                      const SizedBox(height: 4),
+                                      Text(address.fullAddress),
+                                      if (address.isDefault)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange[100],
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              '默认',
+                                              style: TextStyle(
+                                                color: Colors.orange[900],
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  trailing: Icon(Icons.chevron_right),
+                                  onTap: () => _selectAddress(address),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      // TODO: 跳转到添加地址页面
+                    },
+                    child: const Text('添加新地址'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   /// 创建订单
@@ -96,6 +217,11 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
 
                     // 配送信息表单
                     _buildDeliveryForm(),
+                    const SizedBox(height: 16),
+
+                    // 地址簿快捷入口
+                    if (_deliveryType == DeliveryType.delivery)
+                      _buildAddressBookSection(),
                     const SizedBox(height: 16),
 
                     // 商品列表
@@ -239,6 +365,77 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
           ],
         ),
       ),
+    );
+  }
+
+  /// 地址簿快捷入口
+  Widget _buildAddressBookSection() {
+    return Consumer<AddressProvider>(
+      builder: (context, addressProvider, _) {
+        final defaultAddress = addressProvider.addresses.isNotEmpty
+            ? addressProvider.addresses.firstWhere(
+                (addr) => addr.isDefault,
+                orElse: () => addressProvider.addresses.first,
+              )
+            : null;
+
+        return Card(
+          child: InkWell(
+            onTap: _showAddressSelector,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_city, color: Colors.orange),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '从地址簿选择',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (defaultAddress != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '${defaultAddress.contactName} ${defaultAddress.contactPhone}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            defaultAddress.fullAddress,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ] else
+                          Text(
+                            '您还没有保存的地址',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
