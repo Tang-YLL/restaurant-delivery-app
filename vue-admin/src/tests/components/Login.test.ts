@@ -4,19 +4,20 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import Login from '@/views/Login.vue'
 import { useUserStore } from '@/stores/user'
-import ElMessage from 'element-plus'
+import { elementPlusStubs } from '../utils/test-utils'
 
 // Mock Element Plus Message
-vi.mock('element-plus', async () => {
-  const actual = await vi.importActual('element-plus')
-  return {
-    ...actual,
-    ElMessage: {
-      success: vi.fn(),
-      error: vi.fn(),
-    },
-  }
-})
+vi.mock('element-plus', () => ({
+  ElMessage: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+
+const ElMessage = {
+  success: vi.fn(),
+  error: vi.fn(),
+}
 
 describe('Login.vue', () => {
   let router: any
@@ -44,12 +45,16 @@ describe('Login.vue', () => {
     router.push = vi.fn()
   })
 
+  // 通用的mount配置
+  const mountLogin = () => mount(Login, {
+    global: {
+      plugins: [router, pinia],
+      stubs: elementPlusStubs,
+    },
+  })
+
   it('应该正确渲染登录表单', () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     expect(wrapper.find('.login-container').exists()).toBe(true)
     expect(wrapper.find('.login-card').exists()).toBe(true)
@@ -58,22 +63,14 @@ describe('Login.vue', () => {
   })
 
   it('应该显示用户名和密码输入框', () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     const inputs = wrapper.findAll('input')
     expect(inputs).toHaveLength(2)
   })
 
   it('应该验证必填字段', async () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     const loginButton = wrapper.find('button')
     await loginButton.trigger('click')
@@ -84,11 +81,7 @@ describe('Login.vue', () => {
   })
 
   it('应该在输入为空时显示验证错误', async () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     const formRef = wrapper.vm.$refs.formRef as any
     expect(formRef).toBeDefined()
@@ -101,11 +94,7 @@ describe('Login.vue', () => {
   })
 
   it('应该在密码少于6位时显示验证错误', async () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     // 设置表单值
     await wrapper.setData({
@@ -123,11 +112,7 @@ describe('Login.vue', () => {
   })
 
   it('应该成功登录并跳转', async () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     // Mock userStore.login
     const userStore = useUserStore()
@@ -155,11 +140,7 @@ describe('Login.vue', () => {
   })
 
   it('应该在登录失败时显示错误消息', async () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     // Mock userStore.login抛出错误
     const userStore = useUserStore()
@@ -185,11 +166,7 @@ describe('Login.vue', () => {
   })
 
   it('应该在登录过程中显示loading状态', async () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     // Mock一个延迟的登录请求
     const userStore = useUserStore()
@@ -228,11 +205,7 @@ describe('Login.vue', () => {
   })
 
   it('应该在按回车键时触发登录', async () => {
-    const wrapper = mount(Login, {
-      global: {
-        plugins: [router, pinia],
-      },
-    })
+    const wrapper = mountLogin()
 
     const userStore = useUserStore()
     const loginSpy = vi

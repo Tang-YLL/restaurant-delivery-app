@@ -8,12 +8,21 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
  * 用于测试时避免加载完整的 Element Plus 组件
  */
 export const elementPlusStubs = {
-  'el-card': { template: '<div class="el-card"><slot /></div>' },
+  'el-card': {
+    template: '<div class="el-card"><div class="el-card__header" v-if="$slots.header"><slot name="header" /></div><div class="el-card__body"><slot /></div></div>'
+  },
   'el-row': { template: '<div class="el-row"><slot /></div>' },
   'el-col': { template: '<div class="el-col"><slot /></div>' },
   'el-button': { template: '<button class="el-button"><slot /></button>' },
   'el-input': { template: '<input class="el-input" />' },
-  'el-form': { template: '<form class="el-form"><slot /></form>' },
+  'el-form': {
+    template: '<form class="el-form"><slot /></form>',
+    methods: {
+      validate: () => Promise.resolve(false),
+      resetFields: () => {},
+      clearValidate: () => {},
+    }
+  },
   'el-form-item': {
     template: '<div class="el-form-item"><slot /></div>',
   },

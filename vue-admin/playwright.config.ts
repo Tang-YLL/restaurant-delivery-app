@@ -30,6 +30,8 @@ export default defineConfig({
     video: 'retain-on-failure',
     /* 追踪配置 */
     trace: 'on-first-retry',
+    /* 显示浏览器执行 - 设置为false显示浏览器窗口 */
+    headless: process.env.CI === 'true', // CI环境中无头，本地开发显示浏览器
   },
 
   /* 测试项目配置 */

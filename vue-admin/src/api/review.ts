@@ -20,3 +20,13 @@ export const replyReview = (id: number, reply: string) => {
 export const setReviewVisibility = (id: number, is_visible: boolean) => {
   return request.put(`/admin/reviews/${id}/visibility`, { is_visible })
 }
+
+// 批准评价
+export const approveReview = (id: number) => {
+  return request.put(`/admin/reviews/${id}/approve`)
+}
+
+// 拒绝评价
+export const rejectReview = (id: number) => {
+  return request.put(`/admin/reviews/${id}/reject`)
+}

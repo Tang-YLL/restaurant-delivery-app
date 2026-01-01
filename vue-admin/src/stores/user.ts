@@ -57,13 +57,30 @@ export const useUserStore = defineStore('user', () => {
 
   // 从本地存储恢复用户信息
   const restoreUser = () => {
+    const savedToken = localStorage.getItem('token')
     const userStr = localStorage.getItem('user')
+
+    // 恢复token
+    if (savedToken) {
+      token.value = savedToken
+      isLoggedIn.value = true
+    } else {
+      token.value = ''
+      isLoggedIn.value = false
+    }
+
+    // 恢复user信息
     if (userStr) {
       try {
         user.value = JSON.parse(userStr)
       } catch (e) {
         console.error('Failed to parse user from localStorage', e)
+        // 清除无效数据
+        localStorage.removeItem('user')
+        user.value = null
       }
+    } else {
+      user.value = null
     }
   }
 
@@ -76,6 +93,7 @@ export const useUserStore = defineStore('user', () => {
     isLoggedIn,
     login,
     getUser,
-    logout
+    logout,
+    restoreUser  // 导出restoreUser以便测试使用
   }
 })

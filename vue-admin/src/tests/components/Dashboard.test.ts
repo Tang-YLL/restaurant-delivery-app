@@ -12,18 +12,29 @@ vi.mock('@/api/dashboard', () => ({
 }))
 
 // Mock ECharts
-vi.mock('echarts', () => ({
-  default: {
-    init: vi.fn(() => ({
-      setOption: vi.fn(),
-      dispose: vi.fn(),
-      resize: vi.fn(),
-    })),
-  },
-  graphic: {
-    LinearGradient: vi.fn(),
-  },
-}))
+vi.mock('echarts', () => {
+  const mockChartInstance = {
+    setOption: vi.fn(),
+    dispose: vi.fn(),
+    resize: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    showLoading: vi.fn(),
+    hideLoading: vi.fn(),
+    getWidth: vi.fn(() => 800),
+    getHeight: vi.fn(() => 400),
+  }
+
+  return {
+    default: {
+      init: vi.fn(() => mockChartInstance),
+    },
+    init: vi.fn(() => mockChartInstance),
+    graphic: {
+      LinearGradient: vi.fn(),
+    },
+  }
+})
 
 describe('Dashboard.vue', () => {
   let router: any
@@ -152,7 +163,7 @@ describe('Dashboard.vue', () => {
     expect(wrapper.vm.stats.totalProducts).toBe(86)
   })
 
-  it('应该显示订单趋势图', () => {
+  it('应该显示订单趋势图', async () => {
     vi.mocked(dashboardApi.getDashboardStats).mockResolvedValueOnce(mockStats)
 
     const wrapper = mount(Dashboard, {
@@ -161,6 +172,8 @@ describe('Dashboard.vue', () => {
         stubs: elementPlusStubs,
       },
     })
+
+    await flushPromises()
 
     expect(wrapper.text()).toContain('订单趋势')
     expect(wrapper.find('.chart-container').exists()).toBe(true)
@@ -193,15 +206,16 @@ describe('Dashboard.vue', () => {
 
     expect(wrapper.vm.trendDays).toBe(7)
 
-    // 改变趋势天数
-    await wrapper.setData({ trendDays: 30 })
+    // 改变趋势天数（直接修改ref值）
+    wrapper.vm.trendDays = 30
+    await wrapper.vm.$nextTick()
     expect(wrapper.vm.trendDays).toBe(30)
   })
 
   it('应该有正确初始化ECharts实例', async () => {
     vi.mocked(dashboardApi.getDashboardStats).mockResolvedValueOnce(mockStats)
 
-    mount(Dashboard, {
+    const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
         stubs: elementPlusStubs,
@@ -209,10 +223,11 @@ describe('Dashboard.vue', () => {
     })
 
     await flushPromises()
+    await wrapper.vm.$nextTick()
 
     // ECharts应该被初始化
     const echarts = await import('echarts')
-    expect(echarts.default.init).toHaveBeenCalled()
+    expect(echarts.init).toHaveBeenCalled()
   })
 
   it('应该在组件卸载时清理ECharts实例', async () => {
