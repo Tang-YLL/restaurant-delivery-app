@@ -152,7 +152,7 @@ class ProductBase(BaseModel):
     category_id: int = Field(..., description="分类ID")
     detail_url: Optional[str] = Field(None, max_length=1000, description="详情链接")
     image_url: Optional[str] = Field(None, max_length=1000, description="图片URL")
-    local_image_path: str = Field(..., max_length=1000, description="本地图片路径")
+    local_image_path: Optional[str] = Field('/images/default.png', max_length=1000, description="本地图片路径")
     ingredients: Optional[str] = Field(None, description="食材信息")
     description: Optional[str] = Field(None, description="商品描述")
     price: Decimal = Field(..., ge=0, description="价格")

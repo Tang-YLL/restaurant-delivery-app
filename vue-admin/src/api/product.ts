@@ -23,13 +23,14 @@ export const createProduct = async (data: ProductForm) => {
 
   // 字段映射：前端字段 -> 后端字段
   const payload = {
-    name: data.name,
+    title: data.name,
     description: data.description,
     price: data.price,
     stock: data.stock,
     category_id: category.id,
+    local_image_path: data.image || '/images/default.png',
     image_url: data.image || '/images/default.png',
-    is_available: data.status === 'active'
+    is_active: data.status === 'active'
   }
   return request.post('/admin/products', payload)
 }
@@ -46,13 +47,14 @@ export const updateProduct = async (id: number, data: ProductForm) => {
 
   // 字段映射：前端字段 -> 后端字段
   const payload = {
-    name: data.name,
+    title: data.name,
     description: data.description,
     price: data.price,
     stock: data.stock,
     category_id: category.id,
+    local_image_path: data.image || '/images/default.png',
     image_url: data.image || '/images/default.png',
-    is_available: data.status === 'active'
+    is_active: data.status === 'active'
   }
   return request.put(`/admin/products/${id}`, payload)
 }
