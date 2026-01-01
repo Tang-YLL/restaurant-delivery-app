@@ -46,16 +46,20 @@ export const updateProduct = async (id: number, data: ProductForm) => {
   }
 
   // 字段映射：前端字段 -> 后端字段
-  const payload = {
-    title: data.name,
-    description: data.description,
-    price: data.price,
-    stock: data.stock,
-    category_id: category.id,
-    local_image_path: data.image || '/images/default.png',
-    image_url: data.image || '/images/default.png',
-    is_active: data.status === 'active'
+  // 只传递非空字段，避免覆盖已有数据
+  const payload: any = {}
+
+  if (data.name) payload.title = data.name
+  if (data.description !== undefined && data.description !== null) payload.description = data.description
+  if (data.price !== undefined && data.price !== null) payload.price = data.price
+  if (data.stock !== undefined && data.stock !== null) payload.stock = data.stock
+  if (data.category) payload.category_id = category.id
+  if (data.image) {
+    payload.local_image_path = data.image
+    payload.image_url = data.image
   }
+  if (data.status) payload.is_active = data.status === 'active'
+
   return request.put(`/admin/products/${id}`, payload)
 }
 

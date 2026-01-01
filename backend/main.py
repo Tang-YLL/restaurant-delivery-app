@@ -72,15 +72,24 @@ app.add_exception_handler(Exception, general_exception_handler)
 
 # 挂载静态文件服务（仅在非测试环境）
 if not IS_TESTING:
+    # 挂载/static目录
     try:
         app.mount("/static", StaticFiles(directory=settings.STATIC_FILES_PATH), name="static")
-        # 挂载商品图片目录
-        images_dir = "public/images"
+        logger.info(f"静态文件已挂载: /static -> {settings.STATIC_FILES_PATH}")
+    except RuntimeError as e:
+        logger.warning(f"/static挂载失败: {e}")
+
+    # 挂载商品图片目录 - 注意：uploads.py返回的路径是/images/products/xxx.png
+    # 所以这里应该挂载到public/images，而不是public/images/products
+    try:
+        images_dir = os.path.abspath("public/images")
         if os.path.exists(images_dir):
-            app.mount("/images", StaticFiles(directory=os.path.join(images_dir, "products")), name="images")
-    except RuntimeError:
-        # 静态文件目录不存在时警告但不中断启动
-        logger.warning(f"静态文件目录不存在: {settings.STATIC_FILES_PATH}")
+            app.mount("/images", StaticFiles(directory=images_dir), name="images")
+            logger.info(f"图片目录已挂载: /images -> {images_dir}")
+        else:
+            logger.warning(f"图片目录不存在: {images_dir}")
+    except RuntimeError as e:
+        logger.warning(f"/images挂载失败: {e}")
 
 # 注册API路由
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)

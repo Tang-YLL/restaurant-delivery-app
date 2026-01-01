@@ -475,6 +475,12 @@ const getImageUrl = (path: string) => {
   if (path.startsWith('http')) {
     return path
   }
+  // 图片路径：/images/products/xxx.png（不需要/api前缀）
+  if (path.startsWith('/images')) {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8001'
+    return `${baseUrl}${path}`
+  }
+  // API路径：需要/api前缀
   return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001'}${path}`
 }
 
