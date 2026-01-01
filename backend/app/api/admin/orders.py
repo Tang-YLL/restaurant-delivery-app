@@ -186,13 +186,70 @@ async def update_order_status(
             target_id=order_id,
             details={
                 "old_status": old_status,
-                "new_status": status,
-                "order_number": order.order_number
+                "new_status": status
             },
             db=db
         )
 
-        return MessageResponse(message="订单状态已更新", success=True)
+        return {"message": "订单状态更新成功", "success": True}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/{order_id}/status", response_model=MessageResponse)
+async def update_order_status_patch(
+    order_id: int,
+    status_data: dict,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    更新订单状态(PATCH方法)
+
+    管理员可以更新订单状态,记录操作日志
+    """
+    try:
+        service = AdminService()
+        status = status_data.get("status")
+
+        if not status:
+            raise HTTPException(status_code=400, detail="status字段必填")
+
+        # 查询当前订单状态
+        from app.repositories import OrderRepository
+        from app.models import Order
+        order_repo = OrderRepository(Order, db)
+        current_order = await order_repo.get_by_id(order_id)
+
+        if not current_order:
+            raise HTTPException(status_code=404, detail="订单不存在")
+
+        old_status = current_order.status
+
+        # 更新订单状态
+        order = await service.update_order_status(order_id, status, db)
+
+        if not order:
+            raise HTTPException(status_code=400, detail="订单状态更新失败")
+
+        # 记录审计日志
+        await service.log_action(
+            admin_id=current_admin.id,
+            action="update_order_status",
+            target_type="order",
+            target_id=order_id,
+            details={
+                "old_status": old_status,
+                "new_status": status
+            },
+            db=db
+        )
+
+        return {"message": "订单状态更新成功", "success": True}
+
     except HTTPException:
         raise
     except Exception as e:

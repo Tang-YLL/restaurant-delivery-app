@@ -82,7 +82,31 @@ class TestAuth:
                 "password": test_user_data["password"]
             }
         )
-        token = login_response.json()["access_token"]
+        login_data = login_response.json()
+        token = login_data["access_token"]
+
+        # 调试: 打印token信息
+        from app.core.security import decode_token
+        from jose import jwt
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        print(f"\n=== Token调试信息 ===")
+        print(f"完整Token: {token}")
+        print(f"SECRET_KEY: {settings.SECRET_KEY}")
+        print(f"ALGORITHM: {settings.ALGORITHM}")
+
+        # 尝试手动解码
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            print(f"手动解码成功: {payload}")
+        except Exception as e:
+            print(f"手动解码失败: {type(e).__name__}: {e}")
+
+        # 使用decode_token
+        payload = decode_token(token)
+        print(f"decode_token结果: {payload}")
+        print(f"====================\n")
 
         # 获取当前用户信息
         response = await client.get(

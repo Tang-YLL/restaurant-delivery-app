@@ -92,7 +92,6 @@ class AuthService:
         access_token, refresh_token = create_user_access_token(user.id)
 
         # 缓存用户信息
-        await redis_client.set_user_info_key(user.id)
         await redis_client.set_json(
             f"user:info:{user.id}",
             {"id": user.id, "phone": user.phone, "nickname": user.nickname},
@@ -283,9 +282,13 @@ class ProductService:
 
         # 生成缓存key
         cache_key = f"products:{category_id}:{keyword}:{sort_by}:{page}:{page_size}"
-        cached_data = await redis_client.get_json(cache_key)
-        if cached_data:
-            return cached_data["products"], cached_data["total"]
+        try:
+            cached_data = await redis_client.get_json(cache_key)
+            if cached_data:
+                return cached_data["products"], cached_data["total"]
+        except Exception:
+            # Redis失败时继续从数据库获取
+            pass
 
         # 从数据库获取
         skip = (page - 1) * page_size
@@ -297,16 +300,36 @@ class ProductService:
             limit=page_size
         )
 
-        # 缓存结果
-        cache_data = {
-            "products": products,
-            "total": total
-        }
-        await redis_client.set_json(
-            cache_key,
-            cache_data,
-            expire=600  # 10分钟
-        )
+        # 尝试缓存结果（失败不影响业务）
+        try:
+            # 将ORM对象转换为字典以便序列化
+            products_dict = [
+                {
+                    "id": p.id,
+                    "title": p.title,
+                    "category_id": p.category_id,
+                    "description": p.description,
+                    "price": float(p.price),
+                    "stock": p.stock,
+                    "sales_count": p.sales_count,
+                    "views": p.views,
+                    "status": p.status,
+                    "is_active": p.is_active
+                }
+                for p in products
+            ]
+            cache_data = {
+                "products": products_dict,
+                "total": total
+            }
+            await redis_client.set_json(
+                cache_key,
+                cache_data,
+                expire=600  # 10分钟
+            )
+        except Exception:
+            # 缓存失败不影响业务
+            pass
 
         return products, total
 
@@ -320,19 +343,43 @@ class ProductService:
 
         # 尝试从缓存获取
         cache_key = redis_client.hot_products_key(limit)
-        cached_products = await redis_client.get_json(cache_key)
-        if cached_products:
-            return cached_products
+        try:
+            cached_products = await redis_client.get_json(cache_key)
+            if cached_products:
+                return cached_products
+        except Exception:
+            # Redis失败时继续从数据库获取
+            pass
 
         # 从数据库获取
         products = await product_repo.get_hot_products(limit)
 
-        # 缓存结果
-        await redis_client.set_json(
-            cache_key,
-            products,
-            expire=1800  # 30分钟
-        )
+        # 尝试缓存结果（失败不影响业务）
+        try:
+            # 将ORM对象转换为字典以便序列化
+            products_dict = [
+                {
+                    "id": p.id,
+                    "title": p.title,
+                    "category_id": p.category_id,
+                    "description": p.description,
+                    "price": float(p.price),
+                    "stock": p.stock,
+                    "sales_count": p.sales_count,
+                    "views": p.views,
+                    "status": p.status,
+                    "is_active": p.is_active
+                }
+                for p in products
+            ]
+            await redis_client.set_json(
+                cache_key,
+                products_dict,
+                expire=1800  # 30分钟
+            )
+        except Exception:
+            # 缓存失败不影响业务
+            pass
 
         return products
 
@@ -342,11 +389,15 @@ class ProductService:
 
         # 尝试从缓存获取
         cache_key = redis_client.product_detail_key(product_id)
-        cached_product = await redis_client.get_json(cache_key)
-        if cached_product:
-            # 增加浏览量
-            await redis_client.increment_view_count(product_id)
-            return cached_product
+        try:
+            cached_product = await redis_client.get_json(cache_key)
+            if cached_product:
+                # 增加浏览量
+                await redis_client.increment_view_count(product_id)
+                return cached_product
+        except Exception:
+            # Redis失败时继续从数据库获取
+            pass
 
         # 从数据库获取
         product = await product_repo.get_by_id(product_id)
@@ -354,12 +405,29 @@ class ProductService:
             # 增加浏览量
             await product_repo.increment_views(product_id)
 
-            # 缓存结果
-            await redis_client.set_json(
-                cache_key,
-                product,
-                expire=3600  # 1小时
-            )
+            # 尝试缓存结果（失败不影响业务）
+            try:
+                # 将ORM对象转换为字典以便序列化
+                product_dict = {
+                    "id": product.id,
+                    "title": product.title,
+                    "category_id": product.category_id,
+                    "description": product.description,
+                    "price": float(product.price),
+                    "stock": product.stock,
+                    "sales_count": product.sales_count,
+                    "views": product.views,
+                    "status": product.status,
+                    "is_active": product.is_active
+                }
+                await redis_client.set_json(
+                    cache_key,
+                    product_dict,
+                    expire=3600  # 1小时
+                )
+            except Exception:
+                # 缓存失败不影响业务
+                pass
 
         return product
 

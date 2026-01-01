@@ -4,7 +4,7 @@ JWT认证和安全相关功能
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt  # 直接使用bcrypt库
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,23 +16,32 @@ from app.models import User, Admin
 
 settings = get_settings()
 
-# 密码加密上下文
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # HTTP Bearer认证
 security = HTTPBearer()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""
-    return pwd_context.verify(plain_password, hashed_password)
+    # bcrypt有72字节限制，需要截断密码字节
+    password_bytes = plain_password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+
+    # 将hashed_password从字符串转为字节
+    hashed_bytes = hashed_password.encode('utf-8') if isinstance(hashed_password, str) else hashed_password
+
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 def get_password_hash(password: str) -> str:
     """获取密码哈希"""
-    # bcrypt有72字节限制，需要截断
-    password_bytes = password.encode('utf-8')[:72]
-    return pwd_context.hash(password_bytes.decode('utf-8', errors='ignore'))
+    # bcrypt有72字节限制，需要截断密码字节
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        password_bytes = password_bytes[:72]
+
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=12))
+    return hashed.decode('utf-8')
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
@@ -86,8 +95,14 @@ async def get_current_user(
     if token_type != "access":
         raise credentials_exception
 
-    user_id: int = payload.get("sub")
-    if user_id is None:
+    user_id_str: str = payload.get("sub")
+    if user_id_str is None:
+        raise credentials_exception
+
+    # 将字符串转换回整数
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
         raise credentials_exception
 
     # 检查token是否在黑名单中
@@ -140,8 +155,14 @@ async def get_current_admin(
     if not is_admin:
         raise credentials_exception
 
-    admin_id: int = payload.get("sub")
-    if admin_id is None:
+    admin_id_str: str = payload.get("sub")
+    if admin_id_str is None:
+        raise credentials_exception
+
+    # 将字符串转换回整数
+    try:
+        admin_id = int(admin_id_str)
+    except (ValueError, TypeError):
         raise credentials_exception
 
     # 检查token是否在黑名单中
@@ -171,10 +192,10 @@ async def get_current_admin(
 def create_user_access_token(user_id: int) -> tuple[str, str]:
     """创建用户访问令牌和刷新令牌"""
     access_token = create_access_token(
-        data={"sub": user_id, "is_admin": False}
+        data={"sub": str(user_id), "is_admin": False}  # 转换为字符串
     )
     refresh_token = create_refresh_token(
-        data={"sub": user_id, "is_admin": False}
+        data={"sub": str(user_id), "is_admin": False}  # 转换为字符串
     )
     return access_token, refresh_token
 
@@ -182,9 +203,9 @@ def create_user_access_token(user_id: int) -> tuple[str, str]:
 def create_admin_access_token(admin_id: int) -> tuple[str, str]:
     """创建管理员访问令牌和刷新令牌"""
     access_token = create_access_token(
-        data={"sub": admin_id, "is_admin": True}
+        data={"sub": str(admin_id), "is_admin": True}  # 转换为字符串
     )
     refresh_token = create_refresh_token(
-        data={"sub": admin_id, "is_admin": True}
+        data={"sub": str(admin_id), "is_admin": True}  # 转换为字符串
     )
     return access_token, refresh_token

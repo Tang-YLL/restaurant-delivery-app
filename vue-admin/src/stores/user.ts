@@ -12,11 +12,21 @@ export const useUserStore = defineStore('user', () => {
   const login = async (username: string, password: string) => {
     try {
       const data = await loginApi({ username, password })
-      token.value = data.token
-      user.value = data.user
+      token.value = data.access_token
       isLoggedIn.value = true
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('token', data.access_token)
+      localStorage.setItem('refresh_token', data.refresh_token)
+
+      // 登录成功后获取用户信息
+      try {
+        const userInfo = await getUserInfo()
+        user.value = userInfo
+        localStorage.setItem('user', JSON.stringify(userInfo))
+      } catch (error) {
+        // 如果获取用户信息失败，仍然登录成功，但没有用户详情
+        console.warn('获取用户信息失败，但登录成功', error)
+      }
+
       return data
     } catch (error) {
       throw error
@@ -41,6 +51,7 @@ export const useUserStore = defineStore('user', () => {
     user.value = null
     isLoggedIn.value = false
     localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
   }
 

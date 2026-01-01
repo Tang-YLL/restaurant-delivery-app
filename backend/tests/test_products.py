@@ -166,13 +166,13 @@ class TestProductStock:
     """库存管理测试"""
 
     @pytest.mark.asyncio
-    async def test_validate_stock(self, client: AsyncClient, db: AsyncSession):
+    async def test_validate_stock(self, client: AsyncClient, test_db: AsyncSession):
         """测试库存验证"""
         # 这个测试需要在有库存数据的情况下运行
         from app.repositories import ProductRepository
         from app.models import Product
 
-        repo = ProductRepository(Product, db)
+        repo = ProductRepository(Product, test_db)
         is_valid = await repo.validate_stock(1, 10)
         # 结果取决于商品是否存在以及库存是否充足
         assert isinstance(is_valid, bool)

@@ -13,25 +13,47 @@ export const getProductDetail = (id: number) => {
 
 // 创建商品
 export const createProduct = (data: ProductForm) => {
-  return request.post('/products', data)
+  // 字段映射：前端字段 -> 后端字段
+  const payload = {
+    title: data.name,
+    description: data.description,
+    price: data.price,
+    stock: data.stock,
+    category_id: parseInt(data.category),
+    local_image_path: data.image || '/images/default.png',
+    status: data.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+    is_active: true
+  }
+  return request.post('/admin/products', payload)
 }
 
 // 更新商品
 export const updateProduct = (id: number, data: ProductForm) => {
-  return request.put(`/products/${id}`, data)
+  // 字段映射：前端字段 -> 后端字段
+  const payload = {
+    title: data.name,
+    description: data.description,
+    price: data.price,
+    stock: data.stock,
+    category_id: parseInt(data.category),
+    local_image_path: data.image || '/images/default.png',
+    status: data.status === 'active' ? 'ACTIVE' : 'INACTIVE',
+    is_active: true
+  }
+  return request.put(`/admin/products/${id}`, payload)
 }
 
 // 删除商品
 export const deleteProduct = (id: number) => {
-  return request.delete(`/products/${id}`)
+  return request.delete(`/admin/products/${id}`)
 }
 
 // 获取商品分类
 export const getCategories = () => {
-  return request.get<any, string[]>('/products/categories')
+  return request.get<any, string[]>('/categories')
 }
 
 // 更新商品库存
 export const updateStock = (id: number, stock: number) => {
-  return request.put(`/products/${id}/stock`, { stock })
+  return request.patch(`/admin/products/${id}/stock`, { stock })
 }

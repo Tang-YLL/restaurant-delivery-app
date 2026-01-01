@@ -2,6 +2,7 @@
 FastAPI应用主文件
 配置静态文件服务和API路由
 """
+import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +25,9 @@ from app.api.admin import orders as admin_orders, analytics, users as admin_user
 settings = get_settings()
 logger = setup_logger()
 
+# 检查是否为测试环境
+IS_TESTING = os.getenv("TESTING", "false").lower() == "true"
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,12 +35,14 @@ async def lifespan(app: FastAPI):
     # 启动事件
     logger.info("应用启动中...")
     await init_db()
-    await init_redis()
+    if not IS_TESTING:
+        await init_redis()
     logger.info("应用启动完成")
     yield
     # 关闭事件
     logger.info("应用关闭中...")
-    await close_redis()
+    if not IS_TESTING:
+        await close_redis()
     logger.info("应用关闭完成")
 
 
@@ -64,8 +70,13 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
-# 挂载静态文件服务
-app.mount("/static", StaticFiles(directory=settings.STATIC_FILES_PATH), name="static")
+# 挂载静态文件服务（仅在非测试环境）
+if not IS_TESTING:
+    try:
+        app.mount("/static", StaticFiles(directory=settings.STATIC_FILES_PATH), name="static")
+    except RuntimeError:
+        # 静态文件目录不存在时警告但不中断启动
+        logger.warning(f"静态文件目录不存在: {settings.STATIC_FILES_PATH}")
 
 # 注册API路由
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)

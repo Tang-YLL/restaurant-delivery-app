@@ -3,18 +3,27 @@
 使用pytest和pytest-asyncio进行异步测试
 """
 import pytest
+import os
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from main import app
 from app.models import Base
 from app.core.config import get_settings
+
+# 设置测试环境标志
+os.environ["TESTING"] = "true"
 
 settings = get_settings()
 
 # 创建测试数据库引擎(使用SQLite内存数据库)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+# 延迟导入app，避免初始化生产数据库
+def get_app():
+    """获取FastAPI应用实例"""
+    from main import app
+    return app
 
 
 @pytest.fixture(scope="function")

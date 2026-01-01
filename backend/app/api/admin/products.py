@@ -8,7 +8,14 @@ from typing import List
 from app.core.database import get_db
 from app.core.security import get_current_admin
 from app.models import Admin
-from app.schemas import AdminProductStockUpdate, AdminProductBatchOperation, MessageResponse
+from app.schemas import (
+    AdminProductStockUpdate,
+    AdminProductBatchOperation,
+    MessageResponse,
+    ProductCreate,
+    ProductUpdate,
+    ProductResponse
+)
 from app.services import AdminService, ProductService
 from app.repositories import ProductRepository
 from app.models import Product
@@ -16,7 +23,103 @@ from app.models import Product
 router = APIRouter(prefix="/admin/products", tags=["管理后台-商品管理"])
 
 
+@router.post("", response_model=ProductResponse, status_code=201)
+async def create_product(
+    product_data: ProductCreate,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    创建商品
+
+    管理员创建新商品
+    """
+    try:
+        product_service = ProductService()
+        product = await product_service.create_product(
+            name=product_data.name,
+            description=product_data.description,
+            price=product_data.price,
+            category_id=product_data.category_id,
+            image_url=product_data.image_url,
+            is_available=product_data.is_available,
+            is_hot=product_data.is_hot,
+            db=db
+        )
+        return product
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/{product_id}", response_model=ProductResponse)
+async def update_product(
+    product_id: int,
+    product_data: ProductUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    更新商品信息
+
+    管理员更新商品的基本信息
+    """
+    try:
+        product_service = ProductService()
+        product = await product_service.update_product(
+            product_id=product_id,
+            **product_data.model_dump(exclude_unset=True),
+            db=db
+        )
+        return product
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=404, detail="商品不存在")
+
+
+@router.delete("/{product_id}", response_model=MessageResponse)
+async def delete_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    删除商品
+
+    管理员删除商品(软删除)
+    """
+    try:
+        product_service = ProductService()
+        await product_service.delete_product(product_id=product_id, db=db)
+        return {"message": "商品删除成功", "success": True}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=404, detail="商品不存在")
+
+
+@router.get("/{product_id}", response_model=ProductResponse)
+async def get_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    获取商品详情
+
+    管理员查看商品详细信息
+    """
+    product_repo = ProductRepository(Product, db)
+    product = await product_repo.get_by_id(product_id)
+
+    if not product:
+        raise HTTPException(status_code=404, detail="商品不存在")
+
+    return product
+
+
 @router.put("/{product_id}/stock", response_model=MessageResponse)
+@router.patch("/{product_id}/stock", response_model=MessageResponse)
 async def update_product_stock(
     product_id: int,
     stock_update: AdminProductStockUpdate,

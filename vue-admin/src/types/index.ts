@@ -14,8 +14,9 @@ export interface LoginForm {
 }
 
 export interface LoginResponse {
-  token: string
-  user: User
+  access_token: string
+  refresh_token: string
+  token_type: string
 }
 
 // 订单相关类型

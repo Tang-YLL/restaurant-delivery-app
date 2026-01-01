@@ -205,7 +205,6 @@ class ProductResponse(BaseModel):
     sort_order: int
     created_at: datetime
     updated_at: datetime
-    category: Optional[CategoryResponse] = None
 
 
 # ==================== 购物车相关Schema ====================

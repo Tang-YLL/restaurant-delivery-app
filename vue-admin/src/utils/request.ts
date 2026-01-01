@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import axios from 'axios'
+import type { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '../router'
 import { useUserStore } from '../stores/user'
@@ -94,22 +95,29 @@ service.interceptors.response.use(
       return response.data
     }
 
-    const { code, message, data } = response.data
+    // 检查响应数据格式
+    // 如果响应中有 code 字段，说明是标准格式响应
+    if ('code' in response.data) {
+      const { code, message, data } = response.data
 
-    // 根据业务状态码判断
-    if (code === 200) {
-      return data
-    } else if (code === 401) {
-      // token过期或未登录
-      ElMessage.error('登录已过期，请重新登录')
-      const userStore = useUserStore()
-      userStore.logout()
-      router.push('/login')
-      return Promise.reject(new Error(message || '登录已过期'))
+      // 根据业务状态码判断
+      if (code === 200) {
+        return data
+      } else if (code === 401) {
+        // token过期或未登录
+        ElMessage.error('登录已过期，请重新登录')
+        const userStore = useUserStore()
+        userStore.logout()
+        router.push('/login')
+        return Promise.reject(new Error(message || '登录已过期'))
+      } else {
+        // 其他错误
+        ElMessage.error(message || '请求失败')
+        return Promise.reject(new Error(message || '请求失败'))
+      }
     } else {
-      // 其他错误
-      ElMessage.error(message || '请求失败')
-      return Promise.reject(new Error(message || '请求失败'))
+      // 否则直接返回响应数据（如登录响应的token）
+      return response.data
     }
   },
   (error: AxiosError) => {
