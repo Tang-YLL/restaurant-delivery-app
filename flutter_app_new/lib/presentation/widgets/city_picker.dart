@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/constants/china_cities.dart';
 
-/// 省市区三级联动选择器
+/// 省市区三级联动选择器（优化版）
 class CityPicker extends StatefulWidget {
   final String? initialProvince;
   final String? initialCity;
@@ -20,10 +20,11 @@ class CityPicker extends StatefulWidget {
   State<CityPicker> createState() => _CityPickerState();
 }
 
-class _CityPickerState extends State<CityPicker> {
+class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateMixin {
   String? _selectedProvince;
   String? _selectedCity;
   String? _selectedDistrict;
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -31,6 +32,13 @@ class _CityPickerState extends State<CityPicker> {
     _selectedProvince = widget.initialProvince;
     _selectedCity = widget.initialCity;
     _selectedDistrict = widget.initialDistrict;
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -38,55 +46,82 @@ class _CityPickerState extends State<CityPicker> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 省份选择
-        _buildPicker(
-          label: '省份',
-          value: _selectedProvince,
-          items: chinaCities.keys.toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedProvince = value;
-              _selectedCity = null;
-              _selectedDistrict = null;
-            });
-          },
+        // 标题栏
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '选择地区',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(context),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
         ),
-        if (_selectedProvince != null) ...[
-          const SizedBox(height: 16),
-          // 城市选择
-          _buildPicker(
-            label: '城市',
-            value: _selectedCity,
-            items: chinaCities[_selectedProvince!]!.keys.toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedCity = value;
-                _selectedDistrict = null;
-              });
+        const Divider(height: 1),
+        const SizedBox(height: 16),
+
+        // Tab选项卡
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TabBar(
+            controller: _tabController,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            labelColor: Colors.grey[600],
+            unselectedLabelColor: Colors.grey[600],
+            tabs: const [
+              Tab(text: '省份'),
+              Tab(text: '城市'),
+              Tab(text: '区县'),
+            ],
+            onTap: (index) {
+              // Tab切换逻辑：只有选择了前面的才能切换到后面
+              if (index == 1 && _selectedProvince == null) return;
+              if (index == 2 && (_selectedProvince == null || _selectedCity == null)) return;
             },
           ),
-        ],
-        if (_selectedCity != null) ...[
-          const SizedBox(height: 16),
-          // 区县选择
-          _buildPicker(
-            label: '区县',
-            value: _selectedDistrict,
-            items: chinaCities[_selectedProvince!]![_selectedCity!]!,
-            onChanged: (value) {
-              setState(() {
-                _selectedDistrict = value;
-              });
-            },
+        ),
+        const SizedBox(height: 16),
+
+        // Tab内容
+        SizedBox(
+          height: 200,
+          child: TabBarView(
+            controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _buildProvinceList(),
+              _buildCityList(),
+              _buildDistrictList(),
+            ],
           ),
-        ],
-        const SizedBox(height: 24),
+        ),
+
+        const SizedBox(height: 16),
+
         // 确认按钮
         Row(
           children: [
             Expanded(
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
                 child: const Text('取消'),
               ),
             ),
@@ -102,9 +137,14 @@ class _CityPickerState extends State<CityPicker> {
                           _selectedCity!,
                           _selectedDistrict!,
                         );
-                        Navigator.pop(context);
+                        // 只pop一次，由调用方处理数据
                       }
                     : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
                 child: const Text('确定'),
               ),
             ),
@@ -114,32 +154,140 @@ class _CityPickerState extends State<CityPicker> {
     );
   }
 
-  Widget _buildPicker({
-    required String label,
-    required String? value,
-    required List<String> items,
-    required void Function(String?) onChanged,
-  }) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          hint: Text('请选择$label'),
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
-          }).toList(),
-          onChanged: onChanged,
+  /// 省份列表
+  Widget _buildProvinceList() {
+    final provinces = chinaCities.keys.toList();
+
+    if (provinces.isEmpty) {
+      return const Center(child: Text('暂无数据'));
+    }
+
+    return ListView.builder(
+      itemCount: provinces.length,
+      itemBuilder: (context, index) {
+        final province = provinces[index];
+        final isSelected = _selectedProvince == province;
+
+        return ListTile(
+          title: Text(
+            province,
+            style: TextStyle(
+              color: isSelected ? Colors.orange : Colors.black,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          trailing: isSelected ? const Icon(Icons.check, color: Colors.orange) : null,
+          selected: isSelected,
+          selectedTileColor: Colors.orange[50],
+          onTap: () {
+            setState(() {
+              _selectedProvince = province;
+              _selectedCity = null;
+              _selectedDistrict = null;
+            });
+            _tabController.animateTo(1);
+          },
+        );
+      },
+    );
+  }
+
+  /// 城市列表
+  Widget _buildCityList() {
+    if (_selectedProvince == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.location_city, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              '请先选择省份',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
         ),
-      ),
+      );
+    }
+
+    final cities = chinaCities[_selectedProvince!]!.keys.toList();
+
+    return ListView.builder(
+      itemCount: cities.length,
+      itemBuilder: (context, index) {
+        final city = cities[index];
+        final isSelected = _selectedCity == city;
+
+        return ListTile(
+          title: Text(
+            city,
+            style: TextStyle(
+              color: isSelected ? Colors.orange : Colors.black,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          trailing: isSelected ? const Icon(Icons.check, color: Colors.orange) : null,
+          selected: isSelected,
+          selectedTileColor: Colors.orange[50],
+          onTap: () {
+            setState(() {
+              _selectedCity = city;
+              _selectedDistrict = null;
+            });
+            _tabController.animateTo(2);
+          },
+        );
+      },
+    );
+  }
+
+  /// 区县列表
+  Widget _buildDistrictList() {
+    if (_selectedProvince == null || _selectedCity == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.location_on, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              '请先选择省份和城市',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final districts = chinaCities[_selectedProvince!]![_selectedCity!]!;
+
+    return ListView.builder(
+      itemCount: districts.length,
+      itemBuilder: (context, index) {
+        final district = districts[index];
+        final isSelected = _selectedDistrict == district;
+
+        return ListTile(
+          title: Text(
+            district,
+            style: TextStyle(
+              color: isSelected ? Colors.orange : Colors.black,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          trailing: isSelected ? const Icon(Icons.check, color: Colors.orange) : null,
+          selected: isSelected,
+          selectedTileColor: Colors.orange[50],
+          onTap: () {
+            setState(() {
+              _selectedDistrict = district;
+            });
+            // 自动关闭并返回结果
+            widget.onConfirm(_selectedProvince!, _selectedCity!, _selectedDistrict!);
+            Navigator.pop(context);
+          },
+        );
+      },
     );
   }
 }
@@ -157,21 +305,18 @@ Future<Map<String, String>?> showCityPicker(
     backgroundColor: Colors.transparent,
     builder: (context) {
       return Container(
+        height: 400,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: CityPicker(
           initialProvince: initialProvince,
           initialCity: initialCity,
           initialDistrict: initialDistrict,
           onConfirm: (province, city, district) {
-            Navigator.of(context).pop({
-              'province': province,
-              'city': city,
-              'district': district,
-            });
+            // 不在这里pop，让点击区县时自动处理
           },
         ),
       );
