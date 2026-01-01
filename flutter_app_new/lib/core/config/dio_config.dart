@@ -3,6 +3,7 @@ import 'package:logger/logger.dart';
 import '../constants/api_constants.dart';
 import '../utils/storage_util.dart';
 import '../models/api_response.dart';
+import '../../presentation/services/navigation_service.dart';
 
 /// Dio配置类
 class DioConfig {
@@ -208,8 +209,8 @@ class DioConfig {
     await StorageUtil.removeRefreshToken();
     await StorageUtil.removeUserInfo();
 
-    // TODO: 跳转到登录页
-    // NavigationService.navigateTo(Routes.login);
+    // 跳转到登录页
+    NavigationService.logoutAndNavigateToLogin();
   }
 
   /// 更新Token

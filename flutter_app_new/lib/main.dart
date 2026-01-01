@@ -12,13 +12,19 @@ import 'presentation/providers/favorite_provider.dart';
 import 'presentation/providers/review_provider.dart';
 import 'presentation/routes/app_routes.dart';
 import 'presentation/routes/route_generator.dart';
+import 'presentation/services/navigation_service.dart';
 import 'core/config/hive_config.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 初始化Hive
   await HiveConfig.init();
+
+  // 初始化导航服务
+  NavigationService.initialize(navigatorKey);
 
   runApp(const FoodDeliveryApp());
 
@@ -55,6 +61,7 @@ class FoodDeliveryApp extends StatelessWidget {
             theme: themeProvider.themeData,
             initialRoute: AppRoutes.splash,
             onGenerateRoute: RouteGenerator.generateRoute,
+            navigatorKey: navigatorKey,
           );
         },
       ),
