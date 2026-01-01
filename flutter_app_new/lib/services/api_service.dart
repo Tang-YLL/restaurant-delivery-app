@@ -22,6 +22,12 @@ class ApiService {
         queryParameters: queryParameters,
         options: options,
       );
+
+      // 处理后端可能直接返回List的情况
+      if (response.data is List) {
+        return ApiResponse.success(response.data as T);
+      }
+
       return ApiResponse.fromJson(response.data, dataParser);
     } on DioException catch (e) {
       throw e.error ?? ApiException(-1, '请求失败');
