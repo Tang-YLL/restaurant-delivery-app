@@ -45,7 +45,12 @@ class StorageUtil {
 
   /// 获取用户信息
   static Map<String, dynamic>? getUserInfo() {
-    return HiveConfig.authBox.get(StorageConstants.userInfoKey) as Map<String, dynamic>?;
+    final data = HiveConfig.authBox.get(StorageConstants.userInfoKey);
+    if (data == null) return null;
+    if (data is Map) {
+      return Map<String, dynamic>.from(data);
+    }
+    return null;
   }
 
   /// 删除用户信息

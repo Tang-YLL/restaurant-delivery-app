@@ -118,10 +118,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: NetworkImage(user.avatar ?? ''),
+                      backgroundImage: user.avatar != null
+                          ? NetworkImage(user.avatar!)
+                          : null,
                       child: user.avatar == null
                           ? Text(
-                              user.nickname?[0] ?? user.username[0],
+                              user.nickname?.substring(0, 1) ??
+                              user.username?.substring(0, 1) ??
+                              'U',
                               style: const TextStyle(fontSize: 36),
                             )
                           : null,
@@ -147,18 +151,19 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 16),
               Text(
-                user.nickname ?? user.username,
+                user.nickname ?? user.username ?? '用户',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 8),
-              Text(
-                user.email,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey,
-                    ),
-              ),
+              if (user.email != null)
+                Text(
+                  user.email!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey,
+                      ),
+                ),
               if (user.phone != null) ...[
                 const SizedBox(height: 4),
                 Text(

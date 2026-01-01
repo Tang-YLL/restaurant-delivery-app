@@ -1,7 +1,7 @@
 /// API常量
 class ApiConstants {
   // 基础URL (可根据环境切换)
-  static const String baseUrl = 'https://api.example.com';
+  static const String baseUrl = 'http://localhost:8000/api';
 
   // API版本
   static const String apiVersion = '/v1';

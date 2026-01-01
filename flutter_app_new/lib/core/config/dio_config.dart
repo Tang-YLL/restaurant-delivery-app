@@ -8,6 +8,7 @@ import '../models/api_response.dart';
 class DioConfig {
   static Dio? _instance;
   static final Logger _logger = Logger();
+  static bool _isRefreshing = false;
 
   /// 获取单例Dio实例
   static Dio get dio {
@@ -70,7 +71,7 @@ class DioConfig {
       },
 
       // 错误拦截器
-      onError: (error, handler) {
+      onError: (error, handler) async {
         _logger.e('========== Error ==========');
         _logger.e('Type: ${error.type}');
         _logger.e('Message: ${error.message}');
@@ -90,17 +91,37 @@ class DioConfig {
         } else if (error.type == DioExceptionType.badResponse) {
           errorCode = error.response?.statusCode ?? -1;
 
+          // 401/403错误 - 尝试刷新Token
+          if ((errorCode == 401 || errorCode == 403) &&
+              error.requestOptions.path != '/auth/refresh' &&
+              error.requestOptions.path != '/auth/login') {
+            try {
+              final refreshed = await _refreshToken();
+              if (refreshed) {
+                // 重试原请求
+                final token = StorageUtil.getToken();
+                error.requestOptions.headers['Authorization'] = 'Bearer $token';
+
+                final response = await dio.fetch(error.requestOptions);
+                return handler.resolve(response);
+              }
+            } catch (e) {
+              _logger.e('刷新Token失败: $e');
+            }
+
+            // 刷新失败，清除Token并跳转登录
+            await _handleUnauthorized();
+          }
+
           switch (errorCode) {
             case 400:
               errorMessage = error.response?.data?['message'] ?? '请求参数错误';
               break;
             case 401:
               errorMessage = '未授权,请重新登录';
-              // TODO: 跳转到登录页或刷新Token
-              _handleUnauthorized();
               break;
             case 403:
-              errorMessage = '拒绝访问';
+              errorMessage = '登录已过期,请重新登录';
               break;
             case 404:
               errorMessage = '请求的资源不存在';
@@ -130,8 +151,58 @@ class DioConfig {
     ));
   }
 
+  /// 刷新Token
+  static Future<bool> _refreshToken() async {
+    if (_isRefreshing) {
+      return false;
+    }
+
+    _isRefreshing = true;
+    try {
+      final refreshToken = StorageUtil.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        return false;
+      }
+
+      // 创建临时Dio实例避免拦截器循环
+      final tempDio = Dio(BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ));
+
+      final response = await tempDio.post(
+        '/auth/refresh',
+        data: {'refresh_token': refreshToken},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final newToken = response.data['access_token'] as String?;
+        final newRefreshToken = response.data['refresh_token'] as String?;
+
+        if (newToken != null) {
+          await StorageUtil.saveToken(newToken);
+          if (newRefreshToken != null) {
+            await StorageUtil.saveRefreshToken(newRefreshToken);
+          }
+          updateToken(newToken);
+          _logger.d('Token刷新成功');
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      _logger.e('刷新Token异常: $e');
+      return false;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
   /// 处理401未授权
-  static void _handleUnauthorized() async {
+  static Future<void> _handleUnauthorized() async {
     // 清除Token
     await StorageUtil.removeToken();
     await StorageUtil.removeRefreshToken();

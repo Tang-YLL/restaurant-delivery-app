@@ -3,6 +3,7 @@
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.security import get_current_user, decode_token
@@ -13,6 +14,18 @@ from app.schemas import (
 from app.services import AuthService
 
 router = APIRouter(prefix="/auth", tags=["认证"])
+
+
+# 请求模型
+class SendCodeRequest(BaseModel):
+    """发送验证码请求"""
+    phone: str
+
+
+class VerifyCodeRequest(BaseModel):
+    """验证码登录请求"""
+    phone: str
+    code: str
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -140,3 +153,91 @@ async def get_current_user_info(
     需要Bearer Token认证
     """
     return current_user
+
+
+@router.post("/send-code", response_model=MessageResponse)
+async def send_verification_code(request: SendCodeRequest):
+    """
+    发送验证码
+
+    - **phone**: 手机号
+
+    开发环境返回固定验证码123456
+    生产环境对接短信服务商后发送真实验证码
+    """
+    try:
+        # TODO: 对接短信服务商
+        # 目前返回固定验证码供开发测试使用
+        return {
+            "message": "验证码已发送，固定验证码：123456",
+            "success": True,
+            "data": {
+                "code": "123456",  # 开发环境固定6位验证码
+                "expires_in": 300  # 5分钟有效期
+            }
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"发送验证码失败: {str(e)}"
+        )
+
+
+@router.post("/login-with-code")
+async def login_with_code(
+    request: VerifyCodeRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    验证码登录
+
+    - **phone**: 手机号
+    - **code**: 验证码(开发环境使用123456)
+
+    如果用户不存在则自动注册
+    """
+    try:
+        auth_service = AuthService()
+
+        # 验证验证码(开发环境固定为123456)
+        if request.code != "123456":
+            raise ValueError("验证码错误")
+
+        # 尝试登录，如果用户不存在则自动注册
+        try:
+            user, access_token, refresh_token = await auth_service.login_with_code(
+                phone=request.phone,
+                db=db
+            )
+        except ValueError:
+            # 用户不存在，自动注册
+            user = await auth_service.register(
+                phone=request.phone,
+                password="123456",  # 默认密码
+                nickname=f"用户{request.phone[-4:]}",
+                db=db
+            )
+            # 注册后重新登录
+            user, access_token, refresh_token = await auth_service.login_with_code(
+                phone=request.phone,
+                db=db
+            )
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "user": user
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"登录失败: {str(e)}"
+        )
+

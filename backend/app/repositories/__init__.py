@@ -292,8 +292,9 @@ class ProductRepository(BaseRepository):
             raise ValueError(f"库存不足,当前库存: {product.stock}")
 
         product.stock -= quantity
-        await self.db.commit()
-        await self.db.refresh(product)
+        # 移除commit和refresh - 由外层事务管理
+        # await self.db.commit()
+        # await self.db.refresh(product)
         return product
 
     async def release_stock(self, product_id: int, quantity: int) -> ModelType:
@@ -309,8 +310,9 @@ class ProductRepository(BaseRepository):
             raise ValueError("商品不存在")
 
         product.stock += quantity
-        await self.db.commit()
-        await self.db.refresh(product)
+        # 移除commit和refresh - 由外层事务管理
+        # await self.db.commit()
+        # await self.db.refresh(product)
         return product
 
     async def update_rating(self, product_id: int) -> ModelType:

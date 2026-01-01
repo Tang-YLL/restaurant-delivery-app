@@ -100,6 +100,35 @@ class AuthService:
 
         return user, access_token, refresh_token
 
+    async def login_with_code(
+        self,
+        phone: str,
+        db: AsyncSession = None
+    ) -> Tuple[User, str, str]:
+        """验证码登录（开发环境）"""
+        user_repo = self.get_user_repo(db)
+
+        # 查找用户
+        user = await user_repo.get_by_phone(phone)
+        if not user:
+            raise ValueError("用户不存在，请先注册")
+
+        # 检查用户状态
+        if not user.is_active:
+            raise ValueError("用户已被禁用")
+
+        # 生成token（验证码登录不需要密码验证）
+        access_token, refresh_token = create_user_access_token(user.id)
+
+        # 缓存用户信息
+        await redis_client.set_json(
+            f"user:info:{user.id}",
+            {"id": user.id, "phone": user.phone, "nickname": user.nickname},
+            expire=3600
+        )
+
+        return user, access_token, refresh_token
+
     async def admin_login(
         self,
         username: str,

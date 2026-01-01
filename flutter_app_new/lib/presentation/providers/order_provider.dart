@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../data/models/order.dart';
 import '../../data/models/cart_item.dart';
-import '../../services/mock_service.dart';
+import '../../repositories/order_repository.dart';
 
 /// OrderProvider - 订单状态管理
 class OrderProvider with ChangeNotifier {
@@ -9,6 +9,8 @@ class OrderProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _selectedStatus;
   Order? _currentOrder;
+
+  final OrderRepository _repository = OrderRepository();
 
   List<Order> get orders => _orders;
   bool get isLoading => _isLoading;
@@ -32,7 +34,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.getOrders(status: status);
+      final response = await _repository.getOrders(status: status);
 
       if (response.success && response.data != null) {
         _orders = (response.data! as List)
@@ -62,7 +64,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.createOrder(
+      final response = await _repository.createOrder(
         items: items.map((item) => {
           'id': item.id,
           'product': item.product.toJson(),
@@ -100,7 +102,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.getOrderDetail(orderId);
+      final response = await _repository.getOrderDetail(orderId);
 
       if (response.success && response.data != null) {
         final order = Order.fromJson(response.data!);
@@ -133,7 +135,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.cancelOrder(orderId);
+      final response = await _repository.cancelOrder(orderId);
 
       if (response.success) {
         // 更新订单状态
@@ -207,7 +209,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.confirmOrder(orderId);
+      final response = await _repository.confirmOrder(orderId);
 
       if (response.success) {
         // 更新订单状态为"已完成"

@@ -18,6 +18,8 @@ class HiveConfig {
     await Hive.openBox(StorageConstants.authBox);
     await Hive.openBox(StorageConstants.settingsBox);
     await Hive.openBox(StorageConstants.cacheBox);
+    await Hive.openBox('addressBox');  // 地址存储
+    await Hive.openBox('favoriteBox'); // 收藏存储
 
     _initialized = true;
   }

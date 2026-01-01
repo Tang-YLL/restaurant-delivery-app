@@ -12,7 +12,7 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  String? _selectedCategory;
+  String? _selectedCategoryId;
 
   @override
   void initState() {
@@ -44,15 +44,15 @@ class _CategoryPageState extends State<CategoryPage> {
                         context,
                         null,
                         '全部',
-                        _selectedCategory == null,
+                        _selectedCategoryId == null,
                       );
                     }
                     final category = provider.categories[index - 1];
                     return _buildCategoryItem(
                       context,
-                      category.name,
-                      category.name,
-                      _selectedCategory == category.name,
+                      category.id,
+                      category.name ?? '',
+                      _selectedCategoryId == category.id,
                       icon: category.icon,
                     );
                   },
@@ -62,21 +62,22 @@ class _CategoryPageState extends State<CategoryPage> {
               Expanded(
                 child: provider.isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : GridView.builder(
-                        padding: const EdgeInsets.all(12),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.85,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                        itemCount: provider.products.length,
-                        itemBuilder: (context, index) {
-                          final product = provider.products[index];
-                          return ProductCard(product: product);
-                        },
-                      ),
+                    : provider.products.isEmpty
+                        ? const Center(child: Text('暂无商品'))
+                        : GridView.builder(
+                            padding: const EdgeInsets.all(12),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 1,
+                              childAspectRatio: 1.8,
+                              mainAxisSpacing: 12,
+                            ),
+                            itemCount: provider.products.length,
+                            itemBuilder: (context, index) {
+                              final product = provider.products[index];
+                              return ProductCard(product: product);
+                            },
+                          ),
               ),
             ],
           );
@@ -87,7 +88,7 @@ class _CategoryPageState extends State<CategoryPage> {
 
   Widget _buildCategoryItem(
     BuildContext context,
-    String? category,
+    String? categoryId,
     String label,
     bool isSelected, {
     String? icon,
@@ -95,9 +96,9 @@ class _CategoryPageState extends State<CategoryPage> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedCategory = category;
+          _selectedCategoryId = categoryId;
         });
-        context.read<ProductProvider>().filterByCategory(category);
+        context.read<ProductProvider>().filterByCategory(categoryId);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),

@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              // 分类筛选
+              // 分类筛选 - 横向滚动
               SizedBox(
                 height: 50,
                 child: ListView.builder(
@@ -58,19 +58,22 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: provider.categories.length + 1,
                   itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return CategoryChip(
-                        name: '全部',
-                        isSelected: provider.selectedCategory == null,
-                        onTap: () => provider.clearFilters(),
-                      );
-                    }
-                    final category = provider.categories[index - 1];
-                    return CategoryChip(
-                      name: category.name ?? '',
-                      icon: category.icon,
-                      isSelected: provider.selectedCategory == category.name,
-                      onTap: () => provider.filterByCategory(category.name),
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: CategoryChip(
+                        name: index == 0 ? '全部' : provider.categories[index - 1].name ?? '',
+                        icon: index == 0 ? null : provider.categories[index - 1].icon,
+                        isSelected: index == 0
+                            ? provider.selectedCategoryId == null
+                            : provider.selectedCategoryId == provider.categories[index - 1].id,
+                        onTap: () {
+                          if (index == 0) {
+                            provider.clearFilters();
+                          } else {
+                            provider.filterByCategory(provider.categories[index - 1].id);
+                          }
+                        },
+                      ),
                     );
                   },
                 ),
@@ -84,7 +87,7 @@ class _HomePageState extends State<HomePage> {
                     ? const Center(child: Text('暂无商品'))
                     : RefreshIndicator(
                         onRefresh: () => provider.loadProducts(
-                          category: provider.selectedCategory,
+                          categoryId: provider.selectedCategoryId,
                           search: provider.searchQuery,
                         ),
                         child: GridView.builder(

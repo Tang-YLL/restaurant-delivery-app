@@ -16,7 +16,23 @@ class Category {
     this.count,
   });
 
-  factory Category.fromJson(Map<String, dynamic> json) => _$CategoryFromJson(json);
+  factory Category.fromJson(Map<String, dynamic> json) {
+    // 处理id可能是int的情况
+    final idValue = json['id'];
+    String idStr;
+    if (idValue is int) {
+      idStr = idValue.toString();
+    } else {
+      idStr = idValue as String;
+    }
+
+    return Category(
+      id: idStr,
+      name: json['name'] as String,
+      icon: json['icon']?.toString(),
+      count: json['count'] as int?,
+    );
+  }
 
   Map<String, dynamic> toJson() => _$CategoryToJson(this);
 

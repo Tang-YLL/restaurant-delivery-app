@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../../data/models/product.dart';
 import '../../data/models/cart_item.dart';
-import '../../services/mock_service.dart';
+import '../../repositories/cart_repository.dart';
 
 /// CartProvider - 购物车状态管理
 class CartProvider with ChangeNotifier {
   List<CartItem> _items = [];
   bool _isLoading = false;
+
+  final CartRepository _repository = CartRepository();
 
   List<CartItem> get items => _items;
   bool get isLoading => _isLoading;
@@ -27,7 +29,7 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.getCart();
+      final response = await _repository.getCart();
 
       if (response.success && response.data != null) {
         _items = (response.data! as List)

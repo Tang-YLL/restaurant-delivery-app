@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
       });
       _startCountdown();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('验证码已发送,固定验证码:1234')),
+        const SnackBar(content: Text('验证码已发送,固定验证码:123456')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

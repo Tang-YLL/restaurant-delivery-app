@@ -19,7 +19,7 @@ from app.core.exceptions import (
     validation_exception_handler, sqlalchemy_exception_handler,
     general_exception_handler
 )
-from app.api import auth, users, products, categories, cart, orders, reviews, admin_auth
+from app.api import auth, users, products, categories, cart, orders, reviews, admin_auth, favorites
 from app.api.admin import orders as admin_orders, analytics, users as admin_users, reviews as admin_reviews, audit_logs, products as admin_products, uploads
 
 settings = get_settings()
@@ -100,6 +100,7 @@ app.include_router(categories.router, prefix=settings.API_V1_PREFIX)
 app.include_router(cart.router, prefix=settings.API_V1_PREFIX)
 app.include_router(orders.router, prefix=settings.API_V1_PREFIX)
 app.include_router(reviews.router, prefix=settings.API_V1_PREFIX)
+app.include_router(favorites.router, prefix=settings.API_V1_PREFIX)
 
 # 注册管理后台API路由
 app.include_router(admin_orders.router, prefix=settings.API_V1_PREFIX)

@@ -74,6 +74,21 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
 
 
+class Favorite(Base):
+    """收藏表"""
+    __tablename__ = "favorites"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, comment="商品ID")
+    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+
+    # 关联用户
+    user = relationship("User", back_populates="favorites")
+    # 关联商品
+    product = relationship("Product")
+
+
 class User(Base):
     """用户表"""
     __tablename__ = "users"
@@ -93,6 +108,8 @@ class User(Base):
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     # 关联评价
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
+    # 关联收藏
+    favorites = relationship("Favorite", cascade="all, delete-orphan")
 
 
 class Admin(Base):

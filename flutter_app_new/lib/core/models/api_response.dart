@@ -21,7 +21,7 @@ class ApiResponse<T> {
     );
   }
 
-  factory ApiResponse.error(int code, String message) {
+  factory ApiResponse.error(String message, {int code = -1}) {
     return ApiResponse(
       code: code,
       message: message,

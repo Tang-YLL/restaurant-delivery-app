@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../core/utils/storage_util.dart';
 import '../../data/models/user.dart';
-import '../../services/mock_service.dart';
+import '../../repositories/auth_repository.dart';
 
 /// 认证状态
 enum AuthStatus {
@@ -16,6 +16,8 @@ class AuthProvider with ChangeNotifier {
   AuthStatus _status = AuthStatus.uninitialized;
   User? _user;
   String? _token;
+
+  final AuthRepository _repository = AuthRepository();
 
   AuthStatus get status => _status;
   User? get user => _user;
@@ -50,7 +52,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.login(username, password);
+      final response = await _repository.login(username, password);
 
       if (response.success) {
         final data = response.data!;
@@ -70,6 +72,7 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
+      debugPrint('登录失败: $e');
       _status = AuthStatus.unauthenticated;
       notifyListeners();
       return false;
@@ -82,7 +85,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.verifyCode(phone, code);
+      final response = await _repository.loginWithCode(phone, code);
 
       if (response.success) {
         final data = response.data!;
@@ -102,6 +105,7 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
+      debugPrint('验证码登录失败: $e');
       _status = AuthStatus.unauthenticated;
       notifyListeners();
       return false;
@@ -111,9 +115,10 @@ class AuthProvider with ChangeNotifier {
   /// 发送验证码
   Future<bool> sendVerificationCode(String phone) async {
     try {
-      final response = await MockService.sendVerificationCode(phone);
+      final response = await _repository.sendVerificationCode(phone);
       return response.success;
     } catch (e) {
+      debugPrint('发送验证码失败: $e');
       return false;
     }
   }
@@ -124,7 +129,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await MockService.register(username, password, email);
+      final response = await _repository.register(username, password, email);
 
       if (response.success) {
         final data = response.data!;
@@ -145,6 +150,7 @@ class AuthProvider with ChangeNotifier {
         return false;
       }
     } catch (e) {
+      debugPrint('注册失败: $e');
       _status = AuthStatus.unauthenticated;
       notifyListeners();
       return false;
@@ -155,6 +161,12 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _status = AuthStatus.loading;
     notifyListeners();
+
+    try {
+      await _repository.logout();
+    } catch (e) {
+      debugPrint('登出失败: $e');
+    }
 
     // 清除本地存储
     await StorageUtil.removeToken();
@@ -169,7 +181,7 @@ class AuthProvider with ChangeNotifier {
   /// 更新用户信息
   Future<bool> updateUserInfo(Map<String, dynamic> data) async {
     try {
-      final response = await MockService.updateUserInfo(data);
+      final response = await _repository.updateUserInfo(data);
 
       if (response.success && response.data != null) {
         _user = User.fromJson(response.data!);
@@ -179,6 +191,7 @@ class AuthProvider with ChangeNotifier {
       }
       return false;
     } catch (e) {
+      debugPrint('更新用户信息失败: $e');
       return false;
     }
   }

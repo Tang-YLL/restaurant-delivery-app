@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
-import 'dart:convert';
 import '../../data/models/product.dart';
-import '../../services/api_service.dart';
-import '../../core/utils/storage_util.dart';
+import '../../repositories/favorite_repository.dart';
 
 /// FavoriteProvider - 收藏状态管理
 class FavoriteProvider with ChangeNotifier {
   List<Product> _favorites = [];
   bool _isLoading = false;
   String? _errorMessage;
+
+  final FavoriteRepository _repository = FavoriteRepository();
 
   List<Product> get favorites => _favorites;
   bool get isLoading => _isLoading;
@@ -29,25 +29,10 @@ class FavoriteProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 从本地存储读取
-      final cachedData = await StorageUtil.getFavoriteString('favorites');
-      if (cachedData != null) {
-        final productIds = jsonDecode(cachedData) as List;
-        // 这里简化处理,实际应该从产品列表中查找
-        debugPrint('缓存的收藏商品ID: $productIds');
-      }
-
-      // 从API获取最新数据
-      final response = await ApiService.get('/favorites');
+      final response = await _repository.getFavorites();
 
       if (response.success && response.data != null) {
-        _favorites = (response.data! as List)
-            .map((item) => Product.fromJson(item as Map<String, dynamic>))
-            .toList();
-
-        // 缓存商品ID列表
-        final productIds = _favorites.map((p) => p.id).toList();
-        await StorageUtil.setFavoriteString('favorites', jsonEncode(productIds));
+        _favorites = response.data!;
       }
     } catch (e) {
       _errorMessage = '加载收藏失败: $e';
@@ -63,15 +48,10 @@ class FavoriteProvider with ChangeNotifier {
     _errorMessage = null;
 
     try {
-      final response = await ApiService.post(
-        '/favorites',
-        data: {'productId': product.id},
-      );
+      final response = await _repository.addFavorite(product.id);
 
       if (response.success) {
         _favorites.add(product);
-        await _updateCache();
-
         notifyListeners();
         return true;
       }
@@ -92,12 +72,10 @@ class FavoriteProvider with ChangeNotifier {
     _errorMessage = null;
 
     try {
-      final response = await ApiService.delete('/favorites/$productId');
+      final response = await _repository.removeFavorite(productId);
 
       if (response.success) {
         _favorites.removeWhere((product) => product.id == productId);
-        await _updateCache();
-
         notifyListeners();
         return true;
       }
@@ -125,12 +103,10 @@ class FavoriteProvider with ChangeNotifier {
   /// 清空所有收藏
   Future<bool> clearAll() async {
     try {
-      final response = await ApiService.delete('/favorites/all');
+      final response = await _repository.clearFavorites();
 
       if (response.success) {
         _favorites.clear();
-        await StorageUtil.removeFavorite('favorites');
-
         notifyListeners();
         return true;
       }
@@ -144,12 +120,6 @@ class FavoriteProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
-  }
-
-  /// 更新缓存
-  Future<void> _updateCache() async {
-    final productIds = _favorites.map((p) => p.id).toList();
-    await StorageUtil.setFavoriteString('favorites', jsonEncode(productIds));
   }
 
   /// 清除错误信息

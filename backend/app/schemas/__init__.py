@@ -207,6 +207,34 @@ class ProductResponse(BaseModel):
     updated_at: datetime
 
 
+# ==================== 收藏相关Schema ====================
+class FavoriteBase(BaseModel):
+    """收藏基础Schema"""
+    product_id: int = Field(..., description="商品ID")
+
+
+class FavoriteCreate(FavoriteBase):
+    """收藏创建Schema"""
+    pass
+
+
+class FavoriteResponse(BaseModel):
+    """收藏响应Schema"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    product_id: int
+    created_at: datetime
+    product: Optional["ProductResponse"] = None
+
+
+class FavoriteListResponse(BaseModel):
+    """收藏列表响应Schema"""
+    favorites: List[ProductResponse]
+    total: int
+
+
 # ==================== 购物车相关Schema ====================
 class CartItemBase(BaseModel):
     """购物车基础Schema"""
