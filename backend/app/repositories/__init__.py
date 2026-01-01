@@ -478,8 +478,9 @@ class OrderRepository(BaseRepository):
             order_item = OrderItem(**item_data)
             self.db.add(order_item)
 
-        await self.db.commit()
-        await self.db.refresh(order)
+        # 移除commit和refresh - 由外层事务管理
+        # await self.db.commit()
+        # await self.db.refresh(order)
         return order
 
     async def update_order_status(self, order_id: int, status: str) -> Optional[ModelType]:
