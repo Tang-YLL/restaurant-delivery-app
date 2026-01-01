@@ -108,18 +108,24 @@ class _AddressEditPageState extends State<AddressEditPage> {
             // 省市区选择
             InkWell(
               onTap: () async {
+                print('🔍 Opening city picker, current: $_province, $_city, $_district');
                 final result = await showCityPicker(
                   context,
                   initialProvince: _province,
                   initialCity: _city,
                   initialDistrict: _district,
                 );
+                print('🔍 City picker returned: $result');
                 if (result != null) {
+                  print('🔍 Updating state with: ${result['province']}, ${result['city']}, ${result['district']}');
                   setState(() {
                     _province = result['province'];
                     _city = result['city'];
                     _district = result['district'];
                   });
+                  print('🔍 State updated, new values: $_province, $_city, $_district');
+                } else {
+                  print('🔍 Result is null, no update');
                 }
               },
               child: InputDecorator(

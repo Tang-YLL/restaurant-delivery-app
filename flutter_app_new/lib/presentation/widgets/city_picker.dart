@@ -285,6 +285,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
           selectedTileColor: Colors.orange[50],
           onTap: () {
             // 只调用回调，由回调中的sheetContext来pop
+            print('🔍 District tapped: $_selectedProvince, $_selectedCity, $district');
             widget.onConfirm(
               _selectedProvince!,
               _selectedCity!,
@@ -322,11 +323,13 @@ Future<Map<String, String>?> showCityPicker(
           initialDistrict: initialDistrict,
           onConfirm: (province, city, district) {
             // 使用sheetContext来返回数据
+            print('🔍 onConfirm called: $province, $city, $district');
             final result = <String, String>{
               'province': province,
               'city': city,
               'district': district,
             };
+            print('🔍 Popping with result: $result');
             Navigator.of(sheetContext).pop(result);
           },
         ),
