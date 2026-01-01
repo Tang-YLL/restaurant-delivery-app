@@ -1,9 +1,10 @@
 ---
 name: 外卖app
 description: 中餐厅自有外卖配送系统，包含Flutter移动端用户App、Vue3管理后台和Python后端API
-status: backlog
+status: complete
 created: 2025-12-31T13:18:05Z
-updated: 2025-12-31T23:59:00Z
+updated: 2026-01-01T11:58:10Z
+completed: 2026-01-01T11:58:10Z
 ---
 
 # PRD: 中餐厅自有外卖配送系统
