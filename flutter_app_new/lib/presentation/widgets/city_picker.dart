@@ -24,7 +24,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
   String? _selectedProvince;
   String? _selectedCity;
   String? _selectedDistrict;
-  late TabController _tabController;
+  TabController? _tabController;
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -185,7 +185,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
               _selectedCity = null;
               _selectedDistrict = null;
             });
-            _tabController.animateTo(1);
+            _tabController?.animateTo(1);
           },
         );
       },
@@ -234,7 +234,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
               _selectedCity = city;
               _selectedDistrict = null;
             });
-            _tabController.animateTo(2);
+            _tabController?.animateTo(2);
           },
         );
       },
