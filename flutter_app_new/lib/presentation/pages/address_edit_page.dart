@@ -27,6 +27,7 @@ class _AddressEditPageState extends State<AddressEditPage> {
   late TextEditingController _detailController;
   late String _addressType;
   bool _isDefault = false;
+  bool _hasTriedSave = false; // 是否尝试过保存
 
   @override
   void initState() {
@@ -60,7 +61,7 @@ class _AddressEditPageState extends State<AddressEditPage> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16).copyWith(bottom: 32),
           children: [
             // 联系人
             TextFormField(
@@ -122,11 +123,14 @@ class _AddressEditPageState extends State<AddressEditPage> {
                 }
               },
               child: InputDecorator(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '省市区',
                   hintText: '请选择省市区',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_city),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.location_city),
+                  errorText: _hasTriedSave && (_province == null || _city == null || _district == null)
+                      ? '请选择省市区'
+                      : null,
                 ),
                 child: Text(
                   _province != null && _city != null && _district != null
@@ -138,16 +142,6 @@ class _AddressEditPageState extends State<AddressEditPage> {
                 ),
               ),
             ),
-
-            // 省市区验证器
-            if (_province == null || _city == null || _district == null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8, left: 12),
-                child: Text(
-                  '请选择省市区',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
-                ),
-              ),
 
             const SizedBox(height: 16),
 
@@ -238,6 +232,11 @@ class _AddressEditPageState extends State<AddressEditPage> {
   }
 
   Future<void> _saveAddress() async {
+    // 设置尝试保存标志，显示验证错误
+    setState(() {
+      _hasTriedSave = true;
+    });
+
     // 验证省市区
     if (_province == null || _city == null || _district == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -246,7 +245,34 @@ class _AddressEditPageState extends State<AddressEditPage> {
       return;
     }
 
+    // 验证表单
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // 二次验证：确保所有必填字段都有值
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final detail = _detailController.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入联系人姓名')),
+      );
+      return;
+    }
+
+    if (phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入联系电话')),
+      );
+      return;
+    }
+
+    if (detail.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请输入详细地址')),
+      );
       return;
     }
 
@@ -255,13 +281,13 @@ class _AddressEditPageState extends State<AddressEditPage> {
 
     final address = Address(
       id: widget.address?.id ?? 'address_${DateTime.now().millisecondsSinceEpoch}',
-      userId: 'current_user_id', // 从AuthProvider获取
-      contactName: _nameController.text.trim(),
-      contactPhone: _phoneController.text.trim(),
+      userId: 'current_user_id', // TODO: 从AuthProvider获取
+      contactName: name,
+      contactPhone: phone,
       province: _province!,
       city: _city!,
       district: _district!,
-      detailAddress: _detailController.text.trim(),
+      detailAddress: detail,
       isDefault: _isDefault,
       addressType: _addressType,
       createdAt: widget.address?.createdAt ?? DateTime.now(),

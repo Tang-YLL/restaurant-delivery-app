@@ -137,12 +137,17 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
                         _selectedCity != null &&
                         _selectedDistrict != null
                     ? () {
+                        final result = {
+                          'province': _selectedProvince,
+                          'city': _selectedCity,
+                          'district': _selectedDistrict,
+                        };
                         widget.onConfirm(
                           _selectedProvince!,
                           _selectedCity!,
                           _selectedDistrict!,
                         );
-                        // 只pop一次，由调用方处理数据
+                        Navigator.of(context).pop(result);
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
@@ -289,7 +294,11 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
             });
             // 自动关闭并返回结果
             widget.onConfirm(_selectedProvince!, _selectedCity!, _selectedDistrict!);
-            Navigator.pop(context);
+            Navigator.of(context).pop({
+              'province': _selectedProvince,
+              'city': _selectedCity,
+              'district': _selectedDistrict,
+            });
           },
         );
       },
