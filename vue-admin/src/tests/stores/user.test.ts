@@ -41,15 +41,18 @@ describe('User Store', () => {
 
   it('应该成功登录', async () => {
     const mockLoginData = {
-      token: 'test-token-123',
-      user: {
-        id: 1,
-        username: 'admin',
-        role: 'admin',
-      },
+      access_token: 'test-token-123',
+      refresh_token: 'refresh-token-123',
+    }
+
+    const mockUser = {
+      id: 1,
+      username: 'admin',
+      role: 'admin',
     }
 
     vi.mocked(userApi.login).mockResolvedValueOnce(mockLoginData)
+    vi.mocked(userApi.getUserInfo).mockResolvedValueOnce(mockUser)
 
     const userStore = useUserStore()
     const result = await userStore.login('admin', 'admin123')
@@ -60,10 +63,11 @@ describe('User Store', () => {
     })
 
     expect(userStore.token).toBe('test-token-123')
-    expect(userStore.user).toEqual(mockLoginData.user)
+    expect(userStore.user).toEqual(mockUser)
     expect(userStore.isLoggedIn).toBe(true)
     expect(localStorage.getItem('token')).toBe('test-token-123')
-    expect(localStorage.getItem('user')).toBe(JSON.stringify(mockLoginData.user))
+    expect(localStorage.getItem('refresh_token')).toBe('refresh-token-123')
+    expect(localStorage.getItem('user')).toBe(JSON.stringify(mockUser))
     expect(result).toEqual(mockLoginData)
   })
 
@@ -83,13 +87,15 @@ describe('User Store', () => {
   })
 
   it('应该成功登出', () => {
+    const mockUser = { id: 1, username: 'admin' }
     localStorage.setItem('token', 'test-token')
-    localStorage.setItem('user', JSON.stringify({ id: 1, username: 'admin' }))
+    localStorage.setItem('user', JSON.stringify(mockUser))
 
     const pinia = createPinia()
     setActivePinia(pinia)
 
     const userStore = useUserStore()
+    userStore.user = mockUser as any
     expect(userStore.isLoggedIn).toBe(true)
 
     userStore.logout()
@@ -109,7 +115,8 @@ describe('User Store', () => {
       email: 'admin@example.com',
     }
 
-    vi.mocked(userApi.getUserInfo).mockResolvedValueOnce(mockUser)
+    // Mock getUserInfo
+    userApi.getUserInfo = vi.fn().mockResolvedValueOnce(mockUser) as any
 
     const userStore = useUserStore()
     const result = await userStore.getUser()
@@ -139,6 +146,7 @@ describe('User Store', () => {
     localStorage.setItem('token', 'test-token')
     localStorage.setItem('user', JSON.stringify(mockUser))
 
+    // 重新创建pinia实例以触发restoreUser
     const pinia = createPinia()
     setActivePinia(pinia)
 

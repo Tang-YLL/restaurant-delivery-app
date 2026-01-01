@@ -92,17 +92,35 @@ async def test_get_orders_with_status_filter(client: AsyncClient, test_token: st
 @pytest.mark.asyncio
 async def test_cancel_order(client: AsyncClient, test_token: str, test_db: AsyncSession):
     """测试取消订单"""
-    from app.models import Order
+    from app.models import Order, User
     from app.repositories import OrderRepository
     from sqlalchemy import select
+    from app.core.security import decode_token
 
     headers = {"Authorization": f"Bearer {test_token}"}
+
+    # 从token中获取user_id
+    try:
+        payload = decode_token(test_token)
+        user_id = payload.get("sub")
+        if user_id and user_id.isdigit():
+            user_id = int(user_id)
+        else:
+            # 如果无法解析，查询数据库获取用户ID
+            result = await test_db.execute(
+                select(User).where(User.phone == "13800138000")
+            )
+            user = result.scalar_one_or_none()
+            user_id = user.id if user else 1
+    except:
+        # 默认使用user_id=1
+        user_id = 1
 
     # 首先创建一个测试订单
     order_repo = OrderRepository(Order, test_db)
     order = await order_repo.create({
         "order_number": "TEST001",
-        "user_id": 1,  # 假设用户ID为1
+        "user_id": user_id,
         "total_amount": 100.00,
         "status": "pending"
     })

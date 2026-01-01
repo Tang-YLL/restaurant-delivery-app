@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
 import Dashboard from '@/views/Dashboard.vue'
 import * as dashboardApi from '@/api/dashboard'
+import { elementPlusStubs } from '../utils/test-utils'
 
 // Mock dashboard API
 vi.mock('@/api/dashboard', () => ({
@@ -50,7 +51,10 @@ describe('Dashboard.vue', () => {
 
     router = createRouter({
       history: createWebHistory(),
-      routes: [{ path: '/dashboard', component: Dashboard }],
+      routes: [
+        { path: '/', component: { template: '<div>Home</div>' } },
+        { path: '/dashboard', component: Dashboard },
+      ],
     })
 
     pinia = createPinia()
@@ -76,6 +80,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -88,6 +93,7 @@ describe('Dashboard.vue', () => {
     mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -102,6 +108,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -115,6 +122,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -132,6 +140,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -149,6 +158,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -162,6 +172,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -174,6 +185,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -192,6 +204,7 @@ describe('Dashboard.vue', () => {
     mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 
@@ -208,6 +221,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
       attachTo: document.body,
     })
@@ -232,6 +246,7 @@ describe('Dashboard.vue', () => {
     const wrapper = mount(Dashboard, {
       global: {
         plugins: [router, pinia],
+        stubs: elementPlusStubs,
       },
     })
 

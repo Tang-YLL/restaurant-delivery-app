@@ -138,19 +138,19 @@ class TestAdminAnalytics:
     @pytest.mark.asyncio
     async def test_admin_get_dashboard_stats(self, client: AsyncClient):
         """测试获取仪表盘统计数据"""
-        response = await client.get("/api/admin/analytics/dashboard")
+        response = await client.get("/api/admin/analytics/today")
         assert response.status_code in [200, 401, 403]
 
     @pytest.mark.asyncio
     async def test_admin_get_sales_stats(self, client: AsyncClient):
         """测试获取销售统计"""
-        response = await client.get("/api/admin/analytics/sales")
+        response = await client.get("/api/admin/analytics/trend")
         assert response.status_code in [200, 401, 403]
 
     @pytest.mark.asyncio
     async def test_admin_get_popular_products(self, client: AsyncClient):
         """测试获取热门商品"""
-        response = await client.get("/api/admin/analytics/products/popular")
+        response = await client.get("/api/admin/analytics/hot-products")
         assert response.status_code in [200, 401, 403]
 
 

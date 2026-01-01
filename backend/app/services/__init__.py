@@ -781,24 +781,35 @@ class OrderService:
 
     async def cancel_order(self, order_id: int, user_id: int, db: AsyncSession = None) -> Order:
         """取消订单(释放库存)"""
+        from sqlalchemy.orm import selectinload
+
         order_repo = self.get_order_repo(db)
         product_repo = ProductRepository(Product, db)
 
-        # 使用事务处理
-        async with db.begin():
-            # 1. 查询订单
-            order = await self.get_order_detail(order_id, user_id, db)
+        # 1. 查询订单（预加载order_items）
+        result = await db.execute(
+            select(Order)
+            .options(selectinload(Order.order_items))
+            .where(Order.id == order_id)
+        )
+        order = result.scalar_one_or_none()
 
-            # 2. 检查状态(只有待付款订单可以取消)
-            if order.status != "pending":
-                raise ValueError("只有待付款订单可以取消")
+        if not order:
+            raise ValueError("订单不存在")
 
-            # 3. 释放库存
-            for item in order.order_items:
-                await product_repo.release_stock(item.product_id, item.quantity)
+        if order.user_id != user_id:
+            raise ValueError("无权访问该订单")
 
-            # 4. 更新订单状态
-            order = await order_repo.update_status_with_check(order_id, "cancelled")
+        # 2. 检查状态(只有待付款订单可以取消)
+        if order.status != "pending":
+            raise ValueError("只有待付款订单可以取消")
+
+        # 3. 释放库存
+        for item in order.order_items:
+            await product_repo.release_stock(item.product_id, item.quantity)
+
+        # 4. 更新订单状态
+        order = await order_repo.update_status_with_check(order_id, "cancelled")
 
         return order
 

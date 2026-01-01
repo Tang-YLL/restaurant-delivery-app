@@ -3,6 +3,64 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { config, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+/**
+ * Element Plus 组件的通用 stub
+ * 用于测试时避免加载完整的 Element Plus 组件
+ */
+export const elementPlusStubs = {
+  'el-card': { template: '<div class="el-card"><slot /></div>' },
+  'el-row': { template: '<div class="el-row"><slot /></div>' },
+  'el-col': { template: '<div class="el-col"><slot /></div>' },
+  'el-button': { template: '<button class="el-button"><slot /></button>' },
+  'el-input': { template: '<input class="el-input" />' },
+  'el-form': { template: '<form class="el-form"><slot /></form>' },
+  'el-form-item': {
+    template: '<div class="el-form-item"><slot /></div>',
+  },
+  'el-select': {
+    template: '<select class="el-select"><slot /></select>',
+  },
+  'el-option': { template: '<option class="el-option"><slot /></option>' },
+  'el-date-picker': {
+    template: '<input type="date" class="el-date-picker" />',
+  },
+  'el-table': { template: '<table class="el-table"><slot /></table>' },
+  'el-table-column': {
+    template: '<td class="el-table-column"><slot /></td>',
+  },
+  'el-tag': { template: '<span class="el-tag"><slot /></span>' },
+  'el-dropdown': {
+    template: '<div class="el-dropdown"><slot /></div>',
+  },
+  'el-dropdown-menu': {
+    template: '<div class="el-dropdown-menu"><slot /></div>',
+  },
+  'el-dropdown-item': {
+    template: '<div class="el-dropdown-item"><slot /></div>',
+  },
+  'el-pagination': {
+    template: '<div class="el-pagination"><slot /></div>',
+  },
+  'el-radio-group': {
+    template: '<div class="el-radio-group"><slot /></div>',
+  },
+  'el-radio-button': {
+    template: '<button class="el-radio-button"><slot /></button>',
+  },
+  'el-icon': { template: '<i class="el-icon"><slot /></i>' },
+  'el-dialog': {
+    template: '<div class="el-dialog" v-if="visible"><slot /></div>',
+    props: ['modelValue', 'title'],
+  },
+  'el-upload': {
+    template: '<div class="el-upload"><slot /></div>',
+  },
+  'el-image': {
+    template: '<img class="el-image" />',
+    props: ['src'],
+  },
+}
+
 // 创建测试用的Pinia实例
 export function createTestingPinia() {
   const pinia = createPinia()
@@ -39,6 +97,14 @@ export function createTestingRouter() {
     ],
   })
   return router
+}
+
+// 创建带有 Element Plus stub 的全局配置
+export function createTestGlobalConfig(plugins: any[] = []) {
+  return {
+    plugins,
+    stubs: elementPlusStubs,
+  }
 }
 
 // Mock API响应
