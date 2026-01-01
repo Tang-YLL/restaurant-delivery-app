@@ -41,6 +41,13 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  TabController get _controller {
+    if (_tabController == null || !_tabController!.hasClients) {
+      _tabController = TabController(length: 3, vsync: this);
+    }
+    return _tabController!;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -75,7 +82,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
             borderRadius: BorderRadius.circular(8),
           ),
           child: TabBar(
-            controller: _tabController,
+            controller: _controller,
             indicatorSize: TabBarIndicatorSize.tab,
             indicator: BoxDecoration(
               color: Colors.orange,
@@ -101,7 +108,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
         SizedBox(
           height: 200,
           child: TabBarView(
-            controller: _tabController,
+            controller: _controller,
             physics: const NeverScrollableScrollPhysics(),
             children: [
               _buildProvinceList(),
@@ -185,7 +192,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
               _selectedCity = null;
               _selectedDistrict = null;
             });
-            _tabController?.animateTo(1);
+            _controller.animateTo(1);
           },
         );
       },
@@ -234,7 +241,7 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
               _selectedCity = city;
               _selectedDistrict = null;
             });
-            _tabController?.animateTo(2);
+            _controller.animateTo(2);
           },
         );
       },
