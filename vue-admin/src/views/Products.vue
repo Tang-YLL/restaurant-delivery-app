@@ -273,7 +273,8 @@ const productForm = reactive<ProductForm>({
 })
 
 const stockForm = reactive({
-  stock: 0
+  stock: 0,
+  originalStock: 0
 })
 
 const rules: FormRules = {
@@ -366,12 +367,15 @@ const handleDelete = async (id: number) => {
 const handleUpdateStock = (row: Product) => {
   currentProductId.value = row.id
   stockForm.stock = row.stock
+  stockForm.originalStock = row.stock  // 保存原始库存
   stockDialogVisible.value = true
 }
 
 const handleStockSubmit = async () => {
   try {
-    await updateStock(currentProductId.value, stockForm.stock)
+    // 计算库存调整量（新库存 - 原始库存）
+    const adjustment = stockForm.stock - stockForm.originalStock
+    await updateStock(currentProductId.value, adjustment)
     ElMessage.success('库存更新成功')
     stockDialogVisible.value = false
     loadProducts()

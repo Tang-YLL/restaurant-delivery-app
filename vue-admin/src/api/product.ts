@@ -1,9 +1,52 @@
 import request from '../utils/request'
 import type { Product, ProductForm, ProductQuery, PageResponse } from '../types'
 
+// 分类缓存
+let categoriesCache: Array<{ id: number; name: string; code: string }> | null = null
+
+// 获取分类列表（带缓存）
+const getCategoriesWithCache = async () => {
+  if (categoriesCache) {
+    return categoriesCache
+  }
+
+  categoriesCache = await request.get<any, Array<{ id: number; name: string; code: string }>>('/categories')
+  return categoriesCache
+}
+
+// 清除分类缓存（用于添加/删除分类后）
+export const clearCategoriesCache = () => {
+  categoriesCache = null
+}
+
 // 获取商品列表
-export const getProductList = (params: ProductQuery) => {
-  return request.get<any, PageResponse<Product>>('/admin/products', { params })
+export const getProductList = async (params: ProductQuery) => {
+  // 如果有category参数，需要转换为category_id
+  const requestParams: any = {
+    page: params.page,
+    pageSize: params.pageSize,
+    keyword: params.keyword,
+  }
+
+  // 处理status参数
+  if (params.status !== undefined && params.status !== null && params.status !== '') {
+    requestParams.is_active = params.status === 'active'
+  }
+
+  // 处理category参数（如果有值才请求分类列表）
+  if (params.category && params.category !== '') {
+    try {
+      const categories = await getCategoriesWithCache()
+      const category = categories.find((cat: any) => cat.name === params.category)
+      if (category) {
+        requestParams.category_id = category.id
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error)
+    }
+  }
+
+  return request.get<any, PageResponse<Product>>('/admin/products', { params: requestParams })
 }
 
 // 获取商品详情
@@ -13,8 +56,8 @@ export const getProductDetail = (id: number) => {
 
 // 创建商品
 export const createProduct = async (data: ProductForm) => {
-  // 获取分类列表以找到category_id
-  const categories = await request.get<any, Array<{ id: number; name: string; code: string }>>('/categories')
+  // 获取分类列表以找到category_id（使用缓存）
+  const categories = await getCategoriesWithCache()
   const category = categories.find((cat: any) => cat.name === data.category)
 
   if (!category) {
@@ -37,8 +80,8 @@ export const createProduct = async (data: ProductForm) => {
 
 // 更新商品
 export const updateProduct = async (id: number, data: ProductForm) => {
-  // 获取分类列表以找到category_id
-  const categories = await request.get<any, Array<{ id: number; name: string; code: string }>>('/categories')
+  // 获取分类列表以找到category_id（使用缓存）
+  const categories = await getCategoriesWithCache()
   const category = categories.find((cat: any) => cat.name === data.category)
 
   if (!category) {
@@ -68,12 +111,13 @@ export const deleteProduct = (id: number) => {
   return request.delete(`/admin/products/${id}`)
 }
 
-// 获取商品分类
+// 获取商品分类（使用缓存）
 export const getCategories = () => {
-  return request.get<any, Array<{ id: number; name: string; code: string }>>('/categories')
+  return getCategoriesWithCache()
 }
 
 // 更新商品库存
-export const updateStock = (id: number, stock: number) => {
-  return request.patch(`/admin/products/${id}/stock`, { stock })
+// 参数 adjustment 是库存调整量（正数增加，负数减少）
+export const updateStock = (id: number, adjustment: number) => {
+  return request.patch(`/admin/products/${id}/stock`, { stock_adjustment: adjustment })
 }
