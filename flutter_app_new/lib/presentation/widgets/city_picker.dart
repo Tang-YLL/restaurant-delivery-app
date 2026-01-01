@@ -126,11 +126,12 @@ class _CityPickerState extends State<CityPicker> with SingleTickerProviderStateM
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: Colors.grey[300]!),
                 ),
                 child: const Text('取消'),
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 12), // 两个按钮之间的间距
             Expanded(
               child: ElevatedButton(
                 onPressed: _selectedProvince != null &&
@@ -309,34 +310,32 @@ Future<Map<String, String>?> showCityPicker(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (sheetContext) {
-      return Wrap(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-            ),
-            child: CityPicker(
-              initialProvince: initialProvince,
-              initialCity: initialCity,
-              initialDistrict: initialDistrict,
-              onConfirm: (province, city, district) {
-                final result = <String, String>{
-                  'province': province,
-                  'city': city,
-                  'district': district,
-                };
-                Navigator.of(sheetContext).pop(result);
-              },
-            ),
+      return SafeArea(
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-        ],
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: 16,
+          ),
+          child: CityPicker(
+            initialProvince: initialProvince,
+            initialCity: initialCity,
+            initialDistrict: initialDistrict,
+            onConfirm: (province, city, district) {
+              final result = <String, String>{
+                'province': province,
+                'city': city,
+                'district': district,
+              };
+              Navigator.of(sheetContext).pop(result);
+            },
+          ),
+        ),
       );
     },
   );
