@@ -26,7 +26,7 @@ class ProductRepository {
       }
 
       if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
+        queryParams['keyword'] = search;  // 修复：后端使用keyword参数
       }
 
       final response = await _dio.get(

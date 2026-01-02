@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../data/models/product.dart';
 import '../../data/models/category.dart' as data_models;
@@ -8,14 +9,19 @@ class ProductProvider with ChangeNotifier {
   List<Product> _products = [];
   List<data_models.Category> _categories = [];
   bool _isLoading = false;
+  bool _isSearching = false;  // 新增：搜索中状态
   String? _selectedCategoryId;
   String? _searchQuery;
 
   final ProductRepository _repository = ProductRepository();
 
+  // 搜索防抖定时器
+  Timer? _searchDebounce;
+
   List<Product> get products => _products;
   List<data_models.Category> get categories => _categories;
   bool get isLoading => _isLoading;
+  bool get isSearching => _isSearching;  // 新增：搜索中getter
   String? get selectedCategoryId => _selectedCategoryId;
   String? get searchQuery => _searchQuery;
 
@@ -50,6 +56,7 @@ class ProductProvider with ChangeNotifier {
       debugPrint('加载商品失败: $e');
     } finally {
       _isLoading = false;
+      _isSearching = false;  // 搜索完成，重置搜索状态
       notifyListeners();
     }
   }
@@ -88,9 +95,31 @@ class ProductProvider with ChangeNotifier {
     loadProducts(categoryId: categoryId, search: _searchQuery);
   }
 
-  /// 搜索商品
+  /// 搜索商品（带防抖）
   void searchProducts(String query) {
-    loadProducts(categoryId: _selectedCategoryId, search: query);
+    // 取消之前的定时器
+    if (_searchDebounce?.isActive ?? false) {
+      _searchDebounce!.cancel();
+    }
+
+    // 如果搜索为空，立即清除筛选
+    if (query.isEmpty) {
+      _searchDebounce = null;
+      _isSearching = false;
+      notifyListeners();
+      loadProducts(categoryId: _selectedCategoryId, search: null);
+      return;
+    }
+
+    // 设置搜索中状态
+    _isSearching = true;
+    notifyListeners();
+
+    // 设置新的防抖定时器（500ms后执行搜索）
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      debugPrint('🔍 [防抖] 执行搜索: $query');
+      loadProducts(categoryId: _selectedCategoryId, search: query);
+    });
   }
 
   /// 清除筛选
@@ -98,5 +127,12 @@ class ProductProvider with ChangeNotifier {
     _selectedCategoryId = null;
     _searchQuery = null;
     loadProducts();
+  }
+
+  @override
+  void dispose() {
+    // 取消防抖定时器
+    _searchDebounce?.cancel();
+    super.dispose();
   }
 }

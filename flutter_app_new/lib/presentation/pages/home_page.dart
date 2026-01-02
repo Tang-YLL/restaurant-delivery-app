@@ -14,6 +14,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // 搜索框文本控制器
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  // 清除搜索
+  void _clearSearch(ProductProvider provider) {
+    _searchController.clear();
+    _searchFocusNode.unfocus();  // 收起键盘
+    provider.clearFilters();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +40,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Consumer<ProductProvider>(
         builder: (context, provider, _) {
-          if (provider.isLoading) {
+          if (provider.isLoading && provider.products.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -32,20 +50,35 @@ class _HomePageState extends State<HomePage> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
                   decoration: InputDecoration(
                     hintText: '搜索美食...',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: provider.searchQuery != null
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              provider.clearFilters();
-                            },
+                    suffixIcon: provider.isSearching
+                        ? const Padding(
+                            padding: EdgeInsets.all(12.0),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
                           )
-                        : null,
+                        : _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => _clearSearch(provider),
+                              )
+                            : null,
                   ),
                   onChanged: (value) {
                     provider.searchProducts(value);
+                  },
+                  onSubmitted: (value) {
+                    // 提交时收起键盘
+                    _searchFocusNode.unfocus();
                   },
                 ),
               ),
@@ -68,6 +101,8 @@ class _HomePageState extends State<HomePage> {
                             : provider.selectedCategoryId == provider.categories[index - 1].id,
                         onTap: () {
                           if (index == 0) {
+                            // 点击"全部"时清空搜索框
+                            _searchController.clear();
                             provider.clearFilters();
                           } else {
                             provider.filterByCategory(provider.categories[index - 1].id);
