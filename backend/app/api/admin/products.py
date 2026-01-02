@@ -1,9 +1,12 @@
 """
 管理后台商品管理API
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
+from pathlib import Path
+import aiofiles
+import uuid
 
 from app.core.database import get_db
 from app.core.security import get_current_admin
@@ -19,8 +22,13 @@ from app.schemas import (
 from app.services import AdminService, ProductService
 from app.repositories import ProductRepository
 from app.models import Product
+from app.utils.image_processor import ImageProcessor
 
 router = APIRouter(prefix="/admin/products", tags=["管理后台-商品管理"])
+
+# 图片上传目录配置
+UPLOAD_DIR = Path("public/images/product_details")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @router.get("", response_model=dict)
@@ -498,3 +506,84 @@ async def get_product_stats(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{product_id}/details/images/upload")
+async def upload_product_detail_image(
+    product_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    上传商品详情图片
+
+    功能：
+    - 验证文件类型（只允许jpg/png）
+    - 验证文件大小（最大5MB）
+    - 自动压缩（质量85%，最大宽度800px）
+    - 生成唯一文件名
+    - 返回可访问的URL
+    """
+    try:
+        # 验证文件类型
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="只允许上传图片文件")
+
+        # 读取文件
+        image_data = await file.read()
+
+        # 验证大小
+        if not ImageProcessor.validate_image(image_data):
+            raise HTTPException(status_code=400, detail="图片大小不能超过5MB")
+
+        # 验证格式
+        img_format = ImageProcessor.get_image_format(image_data)
+        if img_format not in ['jpeg', 'jpg', 'png']:
+            raise HTTPException(status_code=400, detail="只支持JPG和PNG格式")
+
+        # 处理图片（压缩、调整尺寸）
+        processed_data, ext = ImageProcessor.process_uploaded_image(image_data)
+
+        # 生成唯一文件名
+        filename = f"{uuid.uuid4().hex}{ext}"
+        filepath = UPLOAD_DIR / filename
+
+        # 异步保存文件
+        async with aiofiles.open(filepath, 'wb') as f:
+            await f.write(processed_data)
+
+        # 返回URL
+        file_url = f"/images/product_details/{filename}"
+
+        # 记录审计日志
+        await AdminService().log_action(
+            admin_id=current_admin.id,
+            action="upload_product_detail_image",
+            target_type="product",
+            target_id=product_id,
+            details={
+                "filename": filename,
+                "file_url": file_url,
+                "original_size": len(image_data),
+                "processed_size": len(processed_data),
+                "format": img_format
+            },
+            db=db
+        )
+
+        return {
+            "success": True,
+            "message": "图片上传成功",
+            "data": {
+                "url": file_url,
+                "filename": filename,
+                "size": len(processed_data),
+                "original_size": len(image_data),
+                "compression_ratio": f"{(1 - len(processed_data) / len(image_data)) * 100:.1f}%"
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"图片上传失败: {str(e)}")
