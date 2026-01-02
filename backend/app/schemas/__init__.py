@@ -584,3 +584,79 @@ class AdminAuditLogResponse(BaseModel):
     details: Optional[dict] = None
     ip_address: Optional[str] = None
     created_at: datetime
+
+
+# ==================== 商品详情相关Schema ====================
+class ContentSectionBase(BaseModel):
+    """内容分区基础Schema"""
+    section_type: str = Field(..., description="分区类型: story/nutrition/ingredients/process/tips")
+    title: Optional[str] = Field(None, max_length=200, description="标题")
+    content: str = Field(..., description="富文本HTML内容")
+    display_order: int = Field(0, description="显示顺序")
+
+
+class ContentSectionCreate(ContentSectionBase):
+    """创建内容分区"""
+    pass
+
+
+class ContentSectionUpdate(BaseModel):
+    """更新内容分区"""
+    title: Optional[str] = Field(None, max_length=200)
+    content: Optional[str] = None
+    display_order: Optional[int] = None
+
+
+class ContentSectionResponse(ContentSectionBase):
+    """内容分区响应Schema"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    product_id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class NutritionFactsBase(BaseModel):
+    """营养成分基础Schema"""
+    serving_size: Optional[str] = Field(None, max_length=50, description="份量，如'1份(200g)'")
+    calories: Optional[float] = Field(None, ge=0, description="热量 (kcal/100g)")
+    protein: Optional[float] = Field(None, ge=0, description="蛋白质 (g/100g)")
+    fat: Optional[float] = Field(None, ge=0, description="脂肪 (g/100g)")
+    carbohydrates: Optional[float] = Field(None, ge=0, description="碳水化合物 (g/100g)")
+    sodium: Optional[float] = Field(None, ge=0, description="钠 (mg/100g)")
+    dietary_fiber: Optional[float] = Field(None, ge=0, description="膳食纤维 (g/100g)")
+    sugars: Optional[float] = Field(None, ge=0, description="糖 (g/100g)")
+
+
+class NutritionFactsCreate(NutritionFactsBase):
+    """创建/更新营养数据Schema"""
+    pass
+
+
+class NutritionFactsUpdate(BaseModel):
+    """更新营养数据Schema（所有字段可选）"""
+    serving_size: Optional[str] = Field(None, max_length=50)
+    calories: Optional[float] = Field(None, ge=0)
+    protein: Optional[float] = Field(None, ge=0)
+    fat: Optional[float] = Field(None, ge=0)
+    carbohydrates: Optional[float] = Field(None, ge=0)
+    sodium: Optional[float] = Field(None, ge=0)
+    dietary_fiber: Optional[float] = Field(None, ge=0)
+    sugars: Optional[float] = Field(None, ge=0)
+
+
+class NutritionFactsResponse(NutritionFactsBase):
+    """营养成分响应Schema"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    product_id: int
+    created_at: datetime
+
+
+class FullProductDetailResponse(BaseModel):
+    """完整商品详情响应Schema"""
+    product_id: int
+    content_sections: List[ContentSectionResponse]
+    nutrition_facts: Optional[NutritionFactsResponse] = None

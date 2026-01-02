@@ -17,12 +17,21 @@ from app.schemas import (
     MessageResponse,
     ProductCreate,
     ProductUpdate,
-    ProductResponse
+    ProductResponse,
+    NutritionFactsCreate,
+    NutritionFactsResponse
 )
 from app.services import AdminService, ProductService
+from app.services.product_detail_service import ProductDetailService
 from app.repositories import ProductRepository
 from app.models import Product
 from app.utils.image_processor import ImageProcessor
+from app.schemas import (
+    ContentSectionCreate,
+    ContentSectionUpdate,
+    ContentSectionResponse,
+    FullProductDetailResponse
+)
 
 router = APIRouter(prefix="/admin/products", tags=["管理后台-商品管理"])
 
@@ -587,3 +596,231 @@ async def upload_product_detail_image(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"图片上传失败: {str(e)}")
+
+
+# ==================== 商品详情内容管理 ====================
+
+detail_service = ProductDetailService()
+
+
+@router.get("/{product_id}/details", response_model=FullProductDetailResponse)
+async def get_product_detail_sections(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    获取商品的所有内容分区
+
+    返回商品的所有内容分区和营养数据
+    """
+    try:
+        details = await detail_service.get_full_details(product_id, db)
+        return FullProductDetailResponse(**details)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{product_id}/details/sections", response_model=ContentSectionResponse, status_code=201)
+async def create_content_section(
+    product_id: int,
+    section_data: ContentSectionCreate,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    创建内容分区
+
+    为商品创建一个新的内容分区，HTML内容会自动过滤XSS
+    """
+    try:
+        section = await detail_service.save_content_section(product_id, section_data, db)
+        return section
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{product_id}/details/sections/{section_id}", response_model=ContentSectionResponse)
+async def update_content_section(
+    product_id: int,
+    section_id: int,
+    section_data: ContentSectionUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    更新内容分区
+
+    更新指定内容分区的内容，HTML内容会自动过滤XSS
+    """
+    try:
+        section = await detail_service.update_content_section(section_id, section_data, db)
+
+        if not section:
+            raise HTTPException(status_code=404, detail="内容分区不存在")
+
+        return section
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{product_id}/details/sections/{section_id}", response_model=MessageResponse)
+async def delete_content_section(
+    product_id: int,
+    section_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    删除内容分区
+
+    删除指定的内容分区
+    """
+    try:
+        success = await detail_service.delete_content_section(section_id, db)
+
+        if not success:
+            raise HTTPException(status_code=404, detail="内容分区不存在")
+
+        return MessageResponse(message="删除成功", success=True)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{product_id}/details/sections/batch")
+async def batch_update_sections(
+    product_id: int,
+    sections: List[ContentSectionCreate],
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    批量保存多个内容分区
+
+    删除该商品的所有旧分区，然后批量创建新的分区
+    """
+    try:
+        created_sections = await detail_service.batch_update_sections(product_id, sections, db)
+
+        # 记录审计日志
+        await AdminService().log_action(
+            admin_id=current_admin.id,
+            action="batch_update_content_sections",
+            target_type="product",
+            target_id=product_id,
+            details={
+                "product_id": product_id,
+                "sections_count": len(created_sections)
+            },
+            db=db
+        )
+
+        return {
+            "success": True,
+            "message": f"成功保存{len(created_sections)}个内容分区",
+            "data": [ContentSectionResponse.model_validate(s) for s in created_sections]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== 营养数据管理 ====================
+
+@router.get("/{product_id}/details/nutrition", response_model=NutritionFactsResponse)
+async def get_nutrition_facts(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    获取商品营养数据
+
+    返回指定商品的营养成分信息
+    """
+    try:
+        nutrition = await detail_service.get_nutrition_facts(product_id, db)
+
+        if not nutrition:
+            raise HTTPException(status_code=404, detail="营养数据不存在")
+
+        return nutrition
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{product_id}/details/nutrition", response_model=NutritionFactsResponse)
+async def create_or_update_nutrition_facts(
+    product_id: int,
+    nutrition_data: NutritionFactsCreate,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    创建或更新营养数据
+
+    如果商品已有营养数据则更新，否则创建新的
+    """
+    try:
+        nutrition = await detail_service.create_or_update_nutrition_facts(
+            product_id,
+            nutrition_data,
+            db
+        )
+
+        # 记录审计日志
+        await AdminService().log_action(
+            admin_id=current_admin.id,
+            action="create_or_update_nutrition_facts",
+            target_type="product",
+            target_id=product_id,
+            details={
+                "product_id": product_id,
+                "nutrition_data": nutrition_data.model_dump()
+            },
+            db=db
+        )
+
+        return nutrition
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{product_id}/details/nutrition", response_model=MessageResponse)
+async def delete_nutrition_facts(
+    product_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
+):
+    """
+    删除营养数据
+
+    删除指定商品的营养数据
+    """
+    try:
+        success = await detail_service.delete_nutrition_facts(product_id, db)
+
+        if not success:
+            raise HTTPException(status_code=404, detail="营养数据不存在")
+
+        # 记录审计日志
+        await AdminService().log_action(
+            admin_id=current_admin.id,
+            action="delete_nutrition_facts",
+            target_type="product",
+            target_id=product_id,
+            details={"product_id": product_id},
+            db=db
+        )
+
+        return MessageResponse(message="营养数据已删除", success=True)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
