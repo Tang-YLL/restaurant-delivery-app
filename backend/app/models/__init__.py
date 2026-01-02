@@ -47,6 +47,43 @@ class Category(Base):
     products = relationship("Product", back_populates="category", cascade="all, delete-orphan")
 
 
+class ContentSection(Base):
+    """商品内容区块表"""
+    __tablename__ = "content_sections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False, comment="商品ID")
+    section_type = Column(String(50), nullable=False, comment="内容类型: story/nutrition/ingredients/process/tips")
+    title = Column(String(200), nullable=True, comment="标题")
+    content = Column(Text, nullable=False, comment="富文本HTML内容")
+    display_order = Column(Integer, default=0, comment="显示顺序")
+    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment="更新时间")
+
+    # 关联商品
+    product = relationship("Product", back_populates="content_sections")
+
+
+class NutritionFact(Base):
+    """商品营养成分表"""
+    __tablename__ = "nutrition_facts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False, comment="商品ID")
+    serving_size = Column(String(50), nullable=True, comment="份量大小，如'1份(200g)'")
+    calories = Column(Float, nullable=True, comment="热量 (kcal/100g)")
+    protein = Column(Float, nullable=True, comment="蛋白质 (g/100g)")
+    fat = Column(Float, nullable=True, comment="脂肪 (g/100g)")
+    carbohydrates = Column(Float, nullable=True, comment="碳水化合物 (g/100g)")
+    sodium = Column(Float, nullable=True, comment="钠 (mg/100g)")
+    dietary_fiber = Column(Float, nullable=True, comment="膳食纤维 (g/100g)")
+    sugars = Column(Float, nullable=True, comment="糖 (g/100g)")
+    created_at = Column(DateTime, default=datetime.utcnow, comment="创建时间")
+
+    # 关联商品
+    product = relationship("Product", back_populates="nutrition_fact")
+
+
 class Product(Base):
     """商品表"""
     __tablename__ = "products"
@@ -72,6 +109,10 @@ class Product(Base):
 
     # 关联分类
     category = relationship("Category", back_populates="products")
+    # 关联内容区块
+    content_sections = relationship("ContentSection", back_populates="product", cascade="all, delete-orphan")
+    # 关联营养信息（一对一）
+    nutrition_fact = relationship("NutritionFact", back_populates="product", uselist=False, cascade="all, delete-orphan")
 
 
 class Favorite(Base):
