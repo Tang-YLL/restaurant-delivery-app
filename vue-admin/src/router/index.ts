@@ -40,6 +40,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '商品管理', icon: 'Goods' }
       },
       {
+        path: 'products/:id',
+        name: 'ProductDetail',
+        component: () => import('../views/ProductDetail.vue'),
+        meta: { title: '商品详情', hidden: true }
+      },
+      {
         path: 'categories',
         name: 'Categories',
         component: () => import('../views/Categories.vue'),

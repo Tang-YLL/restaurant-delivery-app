@@ -1,5 +1,5 @@
 import request from '../utils/request'
-import type { Product, ProductForm, ProductQuery, PageResponse } from '../types'
+import type { Product, ProductForm, ProductQuery, PageResponse, Nutrition, NutritionFormData } from '../types'
 
 // 分类缓存
 let categoriesCache: Array<{ id: number; name: string; code: string }> | null = null
@@ -120,4 +120,71 @@ export const getCategories = () => {
 // 参数 adjustment 是库存调整量（正数增加，负数减少）
 export const updateStock = (id: number, adjustment: number) => {
   return request.patch(`/admin/products/${id}/stock`, { stock_adjustment: adjustment })
+}
+
+// 获取商品营养成分
+export const getProductNutrition = (id: number) => {
+  return request.get<any, Nutrition>(`/admin/products/${id}/details/nutrition`)
+}
+
+// 保存商品营养成分
+export const saveProductNutrition = (id: number, data: NutritionFormData) => {
+  // 清理null值和undefined值
+  const payload: any = {
+    serving_size: data.serving_size || '',
+    calories: data.calories ?? 0,
+    protein: data.protein ?? 0,
+    fat: data.fat ?? 0,
+    carbohydrates: data.carbohydrates ?? 0,
+    sodium: data.sodium ?? 0,
+    allergens: data.allergens || []
+  }
+
+  // 可选字段，只有有值时才添加
+  if (data.dietary_fiber !== null && data.dietary_fiber !== undefined) {
+    payload.dietary_fiber = data.dietary_fiber
+  }
+  if (data.sugar !== null && data.sugar !== undefined) {
+    payload.sugar = data.sugar
+  }
+
+  return request.put(`/admin/products/${id}/details/nutrition`, payload)
+}
+
+// ========== 商品详情内容相关 API ==========
+
+// 获取商品详情的所有内容分区
+export const getProductContentSections = (productId: number) => {
+  return request.get(`/admin/products/${productId}/details`)
+}
+
+// 创建内容分区
+export const createContentSection = (productId: number, data: any) => {
+  return request.post(`/admin/products/${productId}/details/sections`, data)
+}
+
+// 更新内容分区
+export const updateContentSection = (productId: number, sectionId: number, data: any) => {
+  return request.put(`/admin/products/${productId}/details/sections/${sectionId}`, data)
+}
+
+// 删除内容分区
+export const deleteContentSection = (productId: number, sectionId: number) => {
+  return request.delete(`/admin/products/${productId}/details/sections/${sectionId}`)
+}
+
+// 批量更新内容分区
+export const batchUpdateContentSections = (productId: number, sections: any[]) => {
+  return request.put(`/admin/products/${productId}/details/sections/batch`, { sections })
+}
+
+// 上传商品详情图片
+export const uploadProductDetailImage = (productId: number, file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post(`/admin/products/${productId}/details/images/upload`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 }

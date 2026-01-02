@@ -74,9 +74,15 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />
-        <el-table-column label="操作" fixed="right" width="180">
+        <el-table-column label="操作" fixed="right" width="300">
           <template #default="{ row }">
+            <el-button type="primary" link @click="handleViewDetail(row)">
+              详情
+            </el-button>
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button type="primary" link @click="handleEditContent(row)">
+              内容
+            </el-button>
             <el-button type="primary" link @click="handleUpdateStock(row)">
               库存
             </el-button>
@@ -219,16 +225,26 @@
         <el-button type="primary" @click="handleStockSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 商品详情内容编辑对话框 -->
+    <ProductDetailContent
+      v-model="contentDialogVisible"
+      :product-id="currentProductId"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, RefreshLeft, Delete } from '@element-plus/icons-vue'
 import { getProductList, createProduct, updateProduct, deleteProduct, getCategories, updateStock } from '../api/product'
 import type { Product, ProductForm, ProductQuery } from '../types'
 import type { FormInstance, FormRules, UploadProps } from 'element-plus'
+import ProductDetailContent from './components/ProductDetailContent.vue'
+
+const router = useRouter()
 
 const loading = ref(false)
 const productList = ref<Product[]>([])
@@ -236,6 +252,7 @@ const categories = ref<string[]>([])
 const total = ref(0)
 const dialogVisible = ref(false)
 const stockDialogVisible = ref(false)
+const contentDialogVisible = ref(false)
 const isEdit = ref(false)
 const currentProductId = ref(0)
 const formRef = ref<FormInstance>()
@@ -369,6 +386,15 @@ const handleUpdateStock = (row: Product) => {
   stockForm.stock = row.stock
   stockForm.originalStock = row.stock  // 保存原始库存
   stockDialogVisible.value = true
+}
+
+const handleEditContent = (row: Product) => {
+  currentProductId.value = row.id
+  contentDialogVisible.value = true
+}
+
+const handleViewDetail = (row: Product) => {
+  router.push(`/products/${row.id}`)
 }
 
 const handleStockSubmit = async () => {

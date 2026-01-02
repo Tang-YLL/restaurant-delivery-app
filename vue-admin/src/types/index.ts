@@ -160,3 +160,48 @@ export interface CategoryForm {
   sort_order: number
   is_active: boolean
 }
+
+// 营养成分相关类型
+export interface Nutrition {
+  serving_size: string  // 份量（如：100g、1份）
+  calories: number      // 热量 (kJ)
+  protein: number       // 蛋白质 (g)
+  fat: number          // 脂肪 (g)
+  carbohydrates: number // 碳水化合物 (g)
+  sodium: number       // 钠 (mg)
+  dietary_fiber?: number // 膳食纤维 (g)，可选
+  sugar?: number       // 糖 (g)，可选
+  allergens?: string[] // 过敏源列表，可选
+}
+
+export interface NutritionFormData {
+  serving_size: string
+  calories: number | null
+  protein: number | null
+  fat: number | null
+  carbohydrates: number | null
+  sodium: number | null
+  dietary_fiber?: number | null
+  sugar?: number | null
+  allergens?: string[]
+}
+
+// NRV标准值（中国营养标签标准）
+export const NRV_VALUES = {
+  protein: 60,      // 蛋白质 60g
+  fat: 60,         // 脂肪 60g
+  carbohydrates: 300, // 碳水化合物 300g
+  sodium: 2000     // 钠 2000mg
+} as const
+
+// 过敏源列表
+export const ALLERGEN_LIST = [
+  '含麸质谷物',
+  '甲壳纲类动物',
+  '蛋类',
+  '鱼类',
+  '花生',
+  '大豆',
+  '乳制品',
+  '坚果'
+] as const
