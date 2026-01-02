@@ -124,7 +124,7 @@ class MockService {
         'user': mockUser,
       }, message: '登录成功');
     } else {
-      return ApiResponse.error(401, '用户名或密码错误');
+      return ApiResponse.error('用户名或密码错误', code: 401);
     }
   }
 
@@ -180,7 +180,7 @@ class MockService {
     );
 
     if (product.isEmpty) {
-      return ApiResponse.error(404, '商品不存在');
+      return ApiResponse.error('商品不存在', code: 404);
     }
 
     return ApiResponse.success(product, message: '获取成功');
@@ -409,7 +409,7 @@ class MockService {
     );
 
     if (order.isEmpty) {
-      return ApiResponse.error(404, '订单不存在');
+      return ApiResponse.error('订单不存在', code: 404);
     }
 
     return ApiResponse.success(order, message: '获取成功');
@@ -426,7 +426,7 @@ class MockService {
       return ApiResponse.success('', message: '订单已取消');
     }
 
-    return ApiResponse.error(404, '订单不存在');
+    return ApiResponse.error('订单不存在', code: 404);
   }
 
   /// Mock确认收货
@@ -441,7 +441,7 @@ class MockService {
       return ApiResponse.success('', message: '订单已完成');
     }
 
-    return ApiResponse.error(404, '订单不存在');
+    return ApiResponse.error('订单不存在', code: 404);
   }
 
   /// Mock发送验证码
@@ -450,7 +450,7 @@ class MockService {
 
     // 简单验证手机号格式
     if (phone.length != 11 || !phone.startsWith('1')) {
-      return ApiResponse.error(400, '手机号格式不正确');
+      return ApiResponse.error('手机号格式不正确', code: 400);
     }
 
     return ApiResponse.success('', message: '验证码已发送');
@@ -465,7 +465,7 @@ class MockService {
 
     // 固定验证码: 1234
     if (code != '1234') {
-      return ApiResponse.error(400, '验证码错误');
+      return ApiResponse.error('验证码错误', code: 400);
     }
 
     final token = 'mock_jwt_token_${DateTime.now().millisecondsSinceEpoch}';
