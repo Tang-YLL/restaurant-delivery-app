@@ -18,23 +18,29 @@ class OrderItemAdapter extends TypeAdapter<OrderItem> {
     };
     return OrderItem(
       id: fields[0] as String,
-      product: fields[1] as Product,
-      quantity: fields[2] as int,
-      price: fields[3] as double,
+      productId: fields[1] as int,
+      productName: fields[2] as String,
+      productImage: fields[3] as String?,
+      quantity: fields[4] as int,
+      price: fields[5] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, OrderItem obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.product)
+      ..write(obj.productId)
       ..writeByte(2)
-      ..write(obj.quantity)
+      ..write(obj.productName)
       ..writeByte(3)
+      ..write(obj.productImage)
+      ..writeByte(4)
+      ..write(obj.quantity)
+      ..writeByte(5)
       ..write(obj.price);
   }
 
