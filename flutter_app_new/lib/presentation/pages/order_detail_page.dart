@@ -94,11 +94,23 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         title = '待付款';
         subtitle = '请尽快完成支付';
         break;
+      case OrderStatus.paid:
+        icon = Icons.check_circle;
+        color = Colors.teal;
+        title = '已付款';
+        subtitle = '支付成功，等待处理';
+        break;
       case OrderStatus.preparing:
         icon = Icons.restaurant;
         color = Colors.blue;
         title = '制作中';
         subtitle = '商家正在为您准备美食';
+        break;
+      case OrderStatus.ready:
+        icon = Icons.fastfood;
+        color = Colors.purple;
+        title = '待取餐';
+        subtitle = '餐品已准备好，请及时取餐';
         break;
       case OrderStatus.delivering:
         icon = Icons.delivery_dining;
@@ -107,10 +119,10 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         subtitle = '骑手正在配送中';
         break;
       case OrderStatus.completed:
-        icon = Icons.check_circle;
+        icon = Icons.done_all;
         color = Colors.grey;
         title = '已完成';
-        subtitle = '订单已完成';
+        subtitle = '订单已完成，感谢您的订购';
         break;
       case OrderStatus.cancelled:
         icon = Icons.cancel;
@@ -213,20 +225,61 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          item.product.imageUrl,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 60,
-                              height: 60,
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.restaurant),
-                            );
-                          },
-                        ),
+                        child: item.productImage != null && item.productImage!.isNotEmpty
+                            ? Image.network(
+                                item.productImage!,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.restaurant_menu,
+                                      color: Colors.grey[400],
+                                      size: 30,
+                                    ),
+                                  );
+                                },
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.restaurant_menu,
+                                  color: Colors.grey[400],
+                                  size: 30,
+                                ),
+                              ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -234,7 +287,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              item.product.name,
+                              item.productName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -392,6 +445,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             onPressed: () {
               _showCancelDialog(order.id);
             },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.grey[700],
+              side: BorderSide(color: Colors.grey[300]!),
+              minimumSize: const Size(double.infinity, 48),
+            ),
             child: const Text('取消订单'),
           ),
         ),
@@ -404,6 +462,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 48),
             ),
             child: const Text('去支付'),
           ),
