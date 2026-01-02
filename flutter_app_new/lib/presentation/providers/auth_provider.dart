@@ -61,7 +61,17 @@ class AuthProvider with ChangeNotifier {
 
         // 保存到本地存储
         await StorageUtil.saveToken(_token!);
+
+        // 计算并保存token过期时间（当前时间 + 120分钟）
+        final expiry = DateTime.now().add(const Duration(minutes: 120));
+        await StorageUtil.saveTokenExpiry(expiry);
+
         await StorageUtil.saveUserInfo(data['user'] as Map<String, dynamic>);
+
+        // 保存refresh_token（如果有）
+        if (data.containsKey('refresh_token')) {
+          await StorageUtil.saveRefreshToken(data['refresh_token'] as String);
+        }
 
         _status = AuthStatus.authenticated;
         notifyListeners();
@@ -94,7 +104,17 @@ class AuthProvider with ChangeNotifier {
 
         // 保存到本地存储
         await StorageUtil.saveToken(_token!);
+
+        // 计算并保存token过期时间（当前时间 + 120分钟）
+        final expiry = DateTime.now().add(const Duration(minutes: 120));
+        await StorageUtil.saveTokenExpiry(expiry);
+
         await StorageUtil.saveUserInfo(data['user'] as Map<String, dynamic>);
+
+        // 保存refresh_token（如果有）
+        if (data.containsKey('refresh_token')) {
+          await StorageUtil.saveRefreshToken(data['refresh_token'] as String);
+        }
 
         _status = AuthStatus.authenticated;
         notifyListeners();

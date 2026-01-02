@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     # JWT配置
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 2小时
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30  # 30天
 
     # Redis配置
     REDIS_HOST: str = "localhost"

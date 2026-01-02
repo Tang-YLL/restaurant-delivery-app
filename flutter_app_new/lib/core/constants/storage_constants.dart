@@ -1,6 +1,7 @@
 /// 存储常量
 class StorageConstants {
   static const String tokenKey = 'auth_token';
+  static const String tokenExpiryKey = 'token_expiry';
   static const String refreshTokenKey = 'refresh_token';
   static const String userInfoKey = 'user_info';
   static const String themeKey = 'theme_mode';

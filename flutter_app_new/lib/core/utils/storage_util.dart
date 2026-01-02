@@ -19,6 +19,28 @@ class StorageUtil {
   /// 删除Token
   static Future<void> removeToken() async {
     await HiveConfig.authBox.delete(StorageConstants.tokenKey);
+    await removeTokenExpiry();
+  }
+
+  /// 保存Token过期时间
+  static Future<void> saveTokenExpiry(DateTime expiry) async {
+    await HiveConfig.authBox.put(StorageConstants.tokenExpiryKey, expiry.toIso8601String());
+  }
+
+  /// 获取Token过期时间
+  static DateTime? getTokenExpiry() {
+    final expiryStr = HiveConfig.authBox.get(StorageConstants.tokenExpiryKey) as String?;
+    if (expiryStr == null) return null;
+    try {
+      return DateTime.parse(expiryStr);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// 删除Token过期时间
+  static Future<void> removeTokenExpiry() async {
+    await HiveConfig.authBox.delete(StorageConstants.tokenExpiryKey);
   }
 
   /// 保存RefreshToken

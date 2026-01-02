@@ -11,6 +11,9 @@ class DioConfig {
   static final Logger _logger = Logger();
   static bool _isRefreshing = false;
 
+  /// Token提前刷新时间（秒）- 在过期前5分钟刷新
+  static const int _refreshBufferSeconds = 300; // 5分钟
+
   /// 获取单例Dio实例
   static Dio get dio {
     if (_instance == null) {
@@ -37,10 +40,43 @@ class DioConfig {
     _instance!.interceptors.add(InterceptorsWrapper(
       // 请求拦截器
       onRequest: (options, handler) async {
-        // 注入Token
+        // 检查token是否需要主动刷新
         final token = StorageUtil.getToken();
         if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+          // 检查是否即将过期
+          final expiry = StorageUtil.getTokenExpiry();
+          if (expiry != null) {
+            final now = DateTime.now();
+            final timeUntilExpiry = expiry.difference(now);
+
+            // 如果在5分钟内过期，先刷新token
+            if (timeUntilExpiry.inSeconds < _refreshBufferSeconds &&
+                timeUntilExpiry.inSeconds > 0) {
+              _logger.d('Token即将过期，主动刷新...');
+              await _refreshToken();
+
+              // 获取新token
+              final newToken = StorageUtil.getToken();
+              if (newToken != null && newToken.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $newToken';
+              }
+            } else if (timeUntilExpiry.inSeconds <= 0) {
+              // token已过期，尝试刷新
+              _logger.d('Token已过期，尝试刷新...');
+              final refreshed = await _refreshToken();
+              if (refreshed) {
+                final newToken = StorageUtil.getToken();
+                if (newToken != null && newToken.isNotEmpty) {
+                  options.headers['Authorization'] = 'Bearer $newToken';
+                }
+              }
+            }
+          }
+
+          // 注入Token（如果还没有）
+          if (!options.headers.containsKey('Authorization')) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
         }
 
         _logger.d('========== Request ==========');
@@ -155,6 +191,7 @@ class DioConfig {
   /// 刷新Token
   static Future<bool> _refreshToken() async {
     if (_isRefreshing) {
+      _logger.d('Token正在刷新中，跳过重复请求');
       return false;
     }
 
@@ -162,6 +199,7 @@ class DioConfig {
     try {
       final refreshToken = StorageUtil.getRefreshToken();
       if (refreshToken == null || refreshToken.isEmpty) {
+        _logger.e('RefreshToken不存在');
         return false;
       }
 
@@ -185,9 +223,16 @@ class DioConfig {
 
         if (newToken != null) {
           await StorageUtil.saveToken(newToken);
+
+          // 计算并保存token过期时间（当前时间 + 120分钟）
+          final expiry = DateTime.now().add(const Duration(minutes: 120));
+          await StorageUtil.saveTokenExpiry(expiry);
+          _logger.d('Token过期时间: $expiry');
+
           if (newRefreshToken != null) {
             await StorageUtil.saveRefreshToken(newRefreshToken);
           }
+
           updateToken(newToken);
           _logger.d('Token刷新成功');
           return true;
