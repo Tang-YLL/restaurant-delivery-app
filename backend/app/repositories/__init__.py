@@ -42,22 +42,25 @@ class BaseRepository(Generic[ModelType]):
         """创建记录"""
         db_obj = self.model(**obj)
         self.db.add(db_obj)
-        await self.db.commit()
-        await self.db.refresh(db_obj)
+        # 移除commit和refresh - 由外层事务管理
+        # await self.db.commit()
+        # await self.db.refresh(db_obj)
         return db_obj
 
     async def update(self, id: int, obj: dict) -> Optional[ModelType]:
         """更新记录"""
         query = update(self.model).where(self.model.id == id).values(**obj)
         await self.db.execute(query)
-        await self.db.commit()
+        # 移除commit - 由外层事务管理
+        # await self.db.commit()
         return await self.get_by_id(id)
 
     async def delete(self, id: int) -> bool:
         """删除记录"""
         query = delete(self.model).where(self.model.id == id)
         result = await self.db.execute(query)
-        await self.db.commit()
+        # 移除commit - 由外层事务管理
+        # await self.db.commit()
         return result.rowcount > 0
 
     async def count(self, **filters) -> int:
@@ -167,7 +170,8 @@ class ProductRepository(BaseRepository):
             self.model.id == product_id
         ).values(views=self.model.views + 1)
         await self.db.execute(query)
-        await self.db.commit()
+        # 移除commit - 由外层事务管理
+        # await self.db.commit()
         return True
 
     async def search_products(
@@ -386,8 +390,9 @@ class CartRepository(BaseRepository):
         cart_item = await self.get_cart_item(user_id, product_id)
         if cart_item:
             cart_item.quantity += quantity
-            await self.db.commit()
-            await self.db.refresh(cart_item)
+            # 移除commit和refresh - 由外层事务管理
+            # await self.db.commit()
+            # await self.db.refresh(cart_item)
             return cart_item
         else:
             return await self.create({
@@ -403,14 +408,16 @@ class CartRepository(BaseRepository):
             self.model.product_id == product_id
         )
         result = await self.db.execute(query)
-        await self.db.commit()
+        # 移除commit - 由外层事务管理
+        # await self.db.commit()
         return result.rowcount > 0
 
     async def clear_cart(self, user_id: int) -> bool:
         """清空购物车"""
         query = delete(self.model).where(self.model.user_id == user_id)
         result = await self.db.execute(query)
-        await self.db.commit()
+        # 移除commit - 由外层事务管理
+        # await self.db.commit()
         return result.rowcount > 0
 
 
@@ -489,7 +496,8 @@ class OrderRepository(BaseRepository):
             self.model.id == order_id
         ).values(status=status)
         await self.db.execute(query)
-        await self.db.commit()
+        # 移除commit - 由外层事务管理
+        # await self.db.commit()
         return await self.get_by_id(order_id)
 
     async def can_transition_status(self, current_status: str, new_status: str) -> bool:
