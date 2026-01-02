@@ -67,13 +67,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint('🔍 开始创建订单...');
-      debugPrint('🔍 商品数量: ${items.length}');
-      debugPrint('🔍 配送方式: ${deliveryType.value}');
-      debugPrint('🔍 联系人: $contactName, $contactPhone');
-
       final itemsData = items.map((item) {
-        debugPrint('🔍 商品: ${item.product.name}, 数量: ${item.quantity}');
         return {
           'id': item.id,
           'product': item.product.toJson(),
@@ -91,8 +85,6 @@ class OrderProvider with ChangeNotifier {
         remark: remark,
       );
 
-      debugPrint('🔍 API响应: success=${response.success}, data=${response.data}');
-
       if (response.success && response.data != null) {
         _currentOrder = Order.fromJson(response.data!);
         _orders.insert(0, _currentOrder!);
@@ -105,9 +97,8 @@ class OrderProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
-    } catch (e, stackTrace) {
-      debugPrint('❌ 创建订单异常: $e');
-      debugPrint('❌ 堆栈: $stackTrace');
+    } catch (e) {
+      debugPrint('创建订单失败: $e');
       _errorMessage = '创建订单失败: $e';
       _isLoading = false;
       notifyListeners();
