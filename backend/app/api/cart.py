@@ -3,6 +3,7 @@
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
 from decimal import Decimal
 
@@ -65,6 +66,17 @@ async def add_to_cart(
             db=db
         )
 
+        # 手动提交并刷新
+        await db.commit()
+
+        # 重新加载cart_item并eager load product
+        from sqlalchemy.orm import selectinload
+        from app.models import CartItem
+        result = await db.execute(
+            select(CartItem).options(selectinload(CartItem.product)).where(CartItem.id == cart_item.id)
+        )
+        cart_item = result.scalar_one()
+
         return CartItemResponse.model_validate(cart_item)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -93,6 +105,17 @@ async def update_cart_item(
             quantity=item_data.quantity,
             db=db
         )
+
+        # 手动提交并刷新
+        await db.commit()
+
+        # 重新加载cart_item并eager load product
+        from sqlalchemy.orm import selectinload
+        from app.models import CartItem
+        result = await db.execute(
+            select(CartItem).options(selectinload(CartItem.product)).where(CartItem.id == cart_item.id)
+        )
+        cart_item = result.scalar_one()
 
         return CartItemResponse.model_validate(cart_item)
     except ValueError as e:

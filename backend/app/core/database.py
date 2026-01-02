@@ -32,7 +32,7 @@ if not IS_TESTING:
         engine,
         class_=AsyncSession,
         expire_on_commit=False,
-        autocommit=False,
+        autocommit=False,  # 保持autocommit=False，手动管理事务
         autoflush=False
     )
 else:
@@ -46,11 +46,15 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     if IS_TESTING:
         # 测试环境不应该调用这个函数
         raise RuntimeError("测试环境应该使用test_db fixture")
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+
+    # 创建session但不使用context manager，避免自动rollback
+    session = AsyncSessionLocal()
+    try:
+        yield session
+    finally:
+        # 在finally中关闭session，但不commit/rollback
+        # 让SQLAlchemy的implicit transaction在request结束时自然结束
+        await session.close()
 
 
 async def init_db():

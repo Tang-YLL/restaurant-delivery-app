@@ -41,13 +41,16 @@ async def register(
     - **nickname**: 昵称(可选)
     """
     try:
-        auth_service = AuthService()
-        user = await auth_service.register(
-            phone=user_data.phone,
-            password=user_data.password,
-            nickname=user_data.nickname,
-            db=db
-        )
+        async with db.begin():
+            auth_service = AuthService()
+            user = await auth_service.register(
+                phone=user_data.phone,
+                password=user_data.password,
+                nickname=user_data.nickname,
+                db=db
+            )
+        # 事务提交后刷新，获取数据库生成的字段
+        await db.refresh(user)
         return user
     except ValueError as e:
         raise HTTPException(
