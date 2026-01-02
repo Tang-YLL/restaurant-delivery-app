@@ -68,6 +68,7 @@ branch: epic/增加商品详情介绍
 ### ✅ DB-001: 设计和创建商品详情数据模型
 - **完成时间**: 2026-01-02 16:30
 - **提交**: 78ffad0
+- **Agent ID**: a3543bd
 - **文件**:
   - `backend/alembic/versions/20260102_add_product_details.py`
   - `backend/app/models/__init__.py` (修改)
@@ -77,11 +78,34 @@ branch: epic/增加商品详情介绍
 ### ✅ API-002: 开发图片上传和处理API
 - **完成时间**: 2026-01-02 16:30
 - **提交**: bea43d7
+- **Agent ID**: a4a91f6
 - **文件**:
   - `backend/app/utils/image_processor.py`
   - `backend/app/api/admin/products.py` (修改)
   - `backend/test_image_upload.py`
   - `backend/IMAGE_UPLOAD_TEST.md`
+
+### ✅ API-001: 开发商品详情内容CRUD API
+- **完成时间**: 2026-01-02 17:30
+- **提交**: (待提交)
+- **Agent ID**: a38ffab
+- **文件**:
+  - `backend/app/services/product_detail_service.py`
+  - `backend/app/schemas/__init__.py` (修改)
+  - `backend/app/api/admin/products.py` (修改)
+  - `backend/app/api/products.py` (修改)
+  - `backend/test_api_content_sections.py`
+  - `backend/API_TESTING_GUIDE.md`
+  - `backend/API_DOCUMENTATION.md`
+
+### ✅ API-003: 开发营养成分管理API
+- **完成时间**: 2026-01-02 17:30
+- **提交**: 823efef
+- **Agent ID**: ac978c5
+- **文件**:
+  - `backend/app/services/product_detail_service.py` (修改)
+  - `backend/app/schemas/__init__.py` (修改)
+  - `backend/app/api/admin/products.py` (修改)
 
 ## Agent分配
 
@@ -134,6 +158,23 @@ branch: epic/增加商品详情介绍
 ### 2026-01-02 17:00:00
 - ✅ Phase 1 基础设施任务已完成
 - 🟡 准备启动下一批任务（API-001, API-003）
+
+### 2026-01-02 17:30:00
+- 🟢 API-001任务完成（Agent a38ffab）
+  - 创建ProductDetailService服务层
+  - 实现6个CRUD API端点
+  - 添加XSS防护（bleach库）
+  - 编写完整的测试工具和文档
+
+- 🟢 API-003任务完成（Agent ac978c5）
+  - 添加营养数据Pydantic schemas
+  - 实现3个营养数据管理端点
+  - 集成到商品详情API
+  - 数据验证（≥0规则）
+
+### 2026-01-02 18:00:00
+- ✅ Phase 1 数据层和后端API 100%完成！
+- 🟡 准备启动 Phase 2（管理后台编辑功能）
 
 ## 下一步
 

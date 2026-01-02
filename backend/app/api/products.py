@@ -11,9 +11,10 @@ from app.core.security import get_current_user, get_current_admin
 from app.models import User, Admin
 from app.schemas import (
     ProductCreate, ProductUpdate, ProductResponse,
-    MessageResponse, PaginatedResponse
+    MessageResponse, PaginatedResponse, FullProductDetailResponse
 )
 from app.services import ProductService
+from app.services.product_detail_service import ProductDetailService
 from app.core.exceptions import AppException
 
 router = APIRouter(prefix="/products", tags=["商品管理"])
@@ -227,5 +228,23 @@ async def delete_product(
         return MessageResponse(message="商品删除成功", success=True)
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{product_id}/full-details", response_model=FullProductDetailResponse)
+async def get_full_product_details(
+    product_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    用户端获取完整商品详情
+
+    包含所有内容分区和营养数据，无需认证即可访问
+    """
+    try:
+        detail_service = ProductDetailService()
+        details = await detail_service.get_full_details(product_id, db)
+        return FullProductDetailResponse(**details)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

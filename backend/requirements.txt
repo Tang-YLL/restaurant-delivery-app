@@ -35,3 +35,6 @@ locust==2.18.3
 black==23.12.1
 flake8==7.0.0
 mypy==1.7.1
+
+# HTML安全过滤
+bleach>=6.0.0
