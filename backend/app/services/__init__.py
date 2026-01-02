@@ -49,7 +49,7 @@ class AuthService:
         nickname: Optional[str] = None,
         db: AsyncSession = None
     ) -> User:
-        """用户注册"""
+        """用户注册（由API层管理事务）"""
         user_repo = self.get_user_repo(db)
 
         # 检查手机号是否已存在
@@ -64,6 +64,7 @@ class AuthService:
             password_hash=password_hash,
             nickname=nickname or f"用户{phone[-4:]}"
         )
+
         return user
 
     async def login(
@@ -611,7 +612,7 @@ class CartService:
         quantity: int,
         db: AsyncSession = None
     ) -> Optional[CartItem]:
-        """更新购物车商品数量"""
+        """更新购物车商品数量（由API层管理事务）"""
         cart_repo = self.get_cart_repo(db)
         product_repo = ProductRepository(Product, db)
 
@@ -625,8 +626,6 @@ class CartService:
             raise ValueError(f"库存不足,当前库存: {product.stock if product else 0}")
 
         cart_item.quantity = quantity
-        await db.commit()
-        await db.refresh(cart_item)
 
         # 清除购物车缓存
         await redis_client.delete(redis_client.cart_key(user_id))
@@ -708,25 +707,50 @@ class OrderService:
         pickup_name: Optional[str] = None,
         pickup_phone: Optional[str] = None,
         remark: Optional[str] = None,
+        items: List[dict] = None,
         db: AsyncSession = None
     ) -> Order:
-        """从购物车创建订单(事务处理)"""
-        order_repo = self.get_order_repo(db)
-        product_repo = ProductRepository(Product, db)
-        cart_repo = CartRepository(CartItem, db)
+        """创建订单(事务由API层管理)
 
-        # 使用事务处理
-        async with db.begin():
-            # 1. 获取购物车商品
-            cart_items = await cart_repo.get_user_cart(user_id)
+        Args:
+            items: 订单商品列表,格式: [{"product_id": 1, "quantity": 2, "price": "10.00"}]
+        """
+        import traceback
+        import sys
+        from decimal import Decimal
 
-            if not cart_items:
-                raise ValueError("购物车为空")
+        try:
+            order_repo = self.get_order_repo(db)
+            product_repo = ProductRepository(Product, db)
+
+            if not items:
+                raise ValueError("订单商品不能为空")
+
+            # 1. 使用传入的商品列表
+            print("DEBUG: 使用传入的items", file=sys.stderr)
+            # 构建cart_items-like对象
+            class CartItemLike:
+                def __init__(self, product, quantity, price):
+                    self.product = product
+                    self.product_id = product.id
+                    self.quantity = quantity
+                    self.price = Decimal(str(price))
+
+            cart_items = []
+            for item in items:
+                # 获取商品信息
+                product = await product_repo.get_by_id(item["product_id"])
+                if not product:
+                    raise ValueError(f"商品ID {item['product_id']} 不存在")
+
+                cart_items.append(CartItemLike(product, item["quantity"], item["price"]))
 
             # 2. 计算订单金额
+            print("DEBUG: 计算订单金额", file=sys.stderr)
             amount_breakdown = self.calculate_order_amount(cart_items, delivery_type)
 
             # 3. 锁定库存(防止并发超卖)
+            print("DEBUG: 开始锁定库存", file=sys.stderr)
             for item in cart_items:
                 try:
                     await product_repo.lock_stock(item.product_id, item.quantity)
@@ -734,6 +758,7 @@ class OrderService:
                     raise ValueError(f"商品 {item.product.title if item.product else item.product_id} {str(e)}")
 
             # 4. 创建订单
+            print("DEBUG: 创建订单数据", file=sys.stderr)
             order_data = {
                 "order_number": self.generate_order_number(),
                 "user_id": user_id,
@@ -748,6 +773,7 @@ class OrderService:
             }
 
             # 5. 创建订单商品
+            print("DEBUG: 创建订单商品", file=sys.stderr)
             order_items_data = []
             for item in cart_items:
                 if item.product:
@@ -756,16 +782,15 @@ class OrderService:
                         "product_name": item.product.title,
                         "product_image": item.product.local_image_path,
                         "quantity": item.quantity,
-                        "price": item.product.price,
-                        "subtotal": Decimal(str(item.product.price)) * item.quantity
+                        "price": item.price,
+                        "subtotal": item.price * item.quantity
                     })
 
+            print("DEBUG: 调用order_repo.create_order", file=sys.stderr)
             order = await order_repo.create_order(order_data, order_items_data)
 
-            # 6. 清空购物车
-            await cart_repo.clear_cart(user_id)
-
-            # 7. 发送订单通知(Pub/Sub)
+            # 6. 发送订单通知(Pub/Sub)
+            print("DEBUG: 发送通知", file=sys.stderr)
             await redis_client.publish(
                 "order_notifications",
                 {
@@ -776,7 +801,13 @@ class OrderService:
                 }
             )
 
-        return order
+            print("DEBUG: 订单创建完成", file=sys.stderr)
+            return order
+
+        except Exception as e:
+            print(f"ERROR: 创建订单失败 - {str(e)}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            raise
 
     async def get_user_orders(
         self,
@@ -844,19 +875,38 @@ class OrderService:
 
     async def pay_order(self, order_id: int, user_id: int, db: AsyncSession = None) -> Order:
         """模拟支付"""
+        from sqlalchemy.orm import selectinload
+
         order_repo = self.get_order_repo(db)
 
         # 查询订单
-        order = await self.get_order_detail(order_id, user_id, db)
+        result = await db.execute(
+            select(Order)
+            .options(selectinload(Order.order_items))
+            .where(Order.id == order_id)
+        )
+        order = result.scalar_one_or_none()
+
+        if not order:
+            raise ValueError("订单不存在")
+
+        if order.user_id != user_id:
+            raise ValueError("无权访问该订单")
 
         # 检查状态
         if order.status != "pending":
             raise ValueError("只有待付款订单可以支付")
 
-        # 更新订单状态
-        order = await order_repo.update_status_with_check(order_id, "paid")
+        # 更新订单状态为"制作中"（支付后直接进入制作流程）
+        order = await order_repo.update_status_with_check(order_id, "preparing")
 
-        return order
+        # 重新加载订单以确保关系数据完整
+        result = await db.execute(
+            select(Order)
+            .options(selectinload(Order.order_items))
+            .where(Order.id == order_id)
+        )
+        return result.scalar_one()
 
     async def update_order_status(
         self,
@@ -1021,7 +1071,7 @@ class AdminService:
             user_agent=user_agent
         )
         db.add(log)
-        await db.commit()
+        # 事务由API层管理
 
     # ==================== 订单管理 ====================
     async def get_all_orders(
@@ -1035,8 +1085,10 @@ class AdminService:
         page: int = 1,
         page_size: int = 20,
         db: AsyncSession = None
-    ) -> Tuple[List[Order], int]:
+    ) -> Tuple[List[dict], int]:
         """获取全局订单列表"""
+        from app.models import User
+
         order_repo = OrderRepository(Order, db)
 
         # 构建查询条件
@@ -1062,17 +1114,47 @@ class AdminService:
         if max_amount is not None:
             conditions.append(Order.total_amount <= max_amount)
 
-        # 查询订单
+        # 使用原生SQL查询避免ORM的lazy loading问题
         skip = (page - 1) * page_size
 
-        query = select(Order).join(Order.user)
-        if conditions:
-            query = query.where(and_(*conditions))
+        # 构建基础查询
+        base_query = select(
+            Order.id,
+            Order.order_number,
+            Order.user_id,
+            User.phone.label('user_phone'),
+            User.nickname.label('user_nickname'),
+            Order.total_amount,
+            Order.status,
+            Order.delivery_type,
+            Order.created_at,
+            Order.updated_at
+        ).outerjoin(User, Order.user_id == User.id)
 
-        query = query.order_by(Order.created_at.desc()).offset(skip).limit(page_size)
+        if conditions:
+            base_query = base_query.where(and_(*conditions))
+
+        # 查询订单
+        query = base_query.order_by(Order.created_at.desc()).offset(skip).limit(page_size)
 
         result = await db.execute(query)
-        orders = result.scalars().unique().all()
+        rows = result.all()
+
+        # 构建数据
+        orders_data = []
+        for row in rows:
+            orders_data.append({
+                "id": row.id,
+                "order_number": row.order_number,
+                "user_id": row.user_id,
+                "user_phone": row.user_phone,
+                "user_nickname": row.user_nickname,
+                "total_amount": float(row.total_amount),
+                "status": row.status,
+                "delivery_type": row.delivery_type,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "updated_at": row.updated_at.isoformat() if row.updated_at else None
+            })
 
         # 查询总数
         count_query = select(func.count(Order.id)).select_from(Order)
@@ -1082,12 +1164,19 @@ class AdminService:
         count_result = await db.execute(count_query)
         total = count_result.scalar() or 0
 
-        return orders, total
+        return orders_data, total
 
     async def get_order_detail_with_user(self, order_id: int, db: AsyncSession) -> Optional[Order]:
         """获取订单详情(含用户信息)"""
+        from sqlalchemy.orm import selectinload
+
         order_repo = OrderRepository(Order, db)
-        return await order_repo.get_by_id(order_id)
+        query = select(Order).options(
+            selectinload(Order.user),
+            selectinload(Order.order_items)
+        ).where(Order.id == order_id)
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
 
     async def update_order_status(
         self,
@@ -1493,8 +1582,6 @@ class AdminService:
             return None
 
         user.is_active = is_active
-        await db.commit()
-        await db.refresh(user)
 
         return user
 
@@ -1569,8 +1656,6 @@ class AdminService:
             return None
 
         review.admin_reply = reply
-        await db.commit()
-        await db.refresh(review)
 
         return review
 

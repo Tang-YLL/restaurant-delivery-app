@@ -42,9 +42,8 @@ class BaseRepository(Generic[ModelType]):
         """创建记录"""
         db_obj = self.model(**obj)
         self.db.add(db_obj)
-        # 移除commit和refresh - 由外层事务管理
-        # await self.db.commit()
-        # await self.db.refresh(db_obj)
+        # flush以生成ID,但不提交事务
+        await self.db.flush()
         return db_obj
 
     async def update(self, id: int, obj: dict) -> Optional[ModelType]:
@@ -281,11 +280,10 @@ class ProductRepository(BaseRepository):
         return list(result.scalars().all()), total
 
     async def lock_stock(self, product_id: int, quantity: int) -> ModelType:
-        """锁定库存(使用SELECT FOR UPDATE防止并发问题)"""
+        """锁定库存(移除FOR UPDATE避免事务冲突)"""
+        # 使用普通查询，避免FOR UPDATE导致的事务问题
         result = await self.db.execute(
-            select(self.model)
-            .where(self.model.id == product_id)
-            .with_for_update()  # 行级锁
+            select(self.model).where(self.model.id == product_id)
         )
         product = result.scalar_one_or_none()
 
@@ -296,9 +294,6 @@ class ProductRepository(BaseRepository):
             raise ValueError(f"库存不足,当前库存: {product.stock}")
 
         product.stock -= quantity
-        # 移除commit和refresh - 由外层事务管理
-        # await self.db.commit()
-        # await self.db.refresh(product)
         return product
 
     async def release_stock(self, product_id: int, quantity: int) -> ModelType:
@@ -364,20 +359,50 @@ class CartRepository(BaseRepository):
 
     async def get_user_cart(self, user_id: int) -> List[ModelType]:
         """获取用户购物车"""
-        query = select(self.model).where(
+        # 移除selectinload，使用join一次性获取所有数据，避免事务问题
+        from app.models import Product
+
+        query = select(
+            self.model.id,
+            self.model.user_id,
+            self.model.product_id,
+            self.model.quantity,
+            self.model.created_at,
+            self.model.updated_at,
+            Product
+        ).join(
+            Product, self.model.product_id == Product.id
+        ).where(
             self.model.user_id == user_id
-        ).options(selectinload(self.model.product))
+        )
+
         result = await self.db.execute(query)
-        return list(result.scalars().all())
+        rows = result.all()
+
+        # 手动构建CartItem对象，避免lazy loading
+        cart_items = []
+        for row in rows:
+            cart_item = self.model(
+                id=row[0],
+                user_id=row[1],
+                product_id=row[2],
+                quantity=row[3],
+                created_at=row[4],
+                updated_at=row[5]
+            )
+            # 手动设置product关系
+            cart_item.product = row[6]
+            cart_items.append(cart_item)
+
+        return cart_items
 
     async def get_cart_item(self, user_id: int, product_id: int) -> Optional[ModelType]:
         """获取购物车商品"""
-        result = await self.db.execute(
-            select(self.model).where(
-                self.model.user_id == user_id,
-                self.model.product_id == product_id
-            )
-        )
+        query = select(self.model).where(
+            self.model.user_id == user_id,
+            self.model.product_id == product_id
+        ).options(selectinload(self.model.product))  # 添加预加载
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def add_or_update_item(
@@ -426,10 +451,10 @@ class OrderRepository(BaseRepository):
 
     # 订单状态转换规则
     ALLOWED_TRANSITIONS = {
-        "pending": ["paid", "cancelled"],
+        "pending": ["paid", "preparing", "cancelled"],  # 支付后可直接进入制作中
         "paid": ["preparing", "cancelled"],
-        "preparing": ["ready"],
-        "ready": ["completed"],
+        "preparing": ["ready", "cancelled"],  # 制作中可取消
+        "ready": ["completed", "cancelled"],  # 待取餐可取消
         "completed": [],
         "cancelled": [],
     }
