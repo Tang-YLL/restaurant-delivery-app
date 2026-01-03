@@ -205,3 +205,24 @@ export const ALLERGEN_LIST = [
   '乳制品',
   '坚果'
 ] as const
+
+// 内容分区相关类型
+export type SectionType = 'story' | 'nutrition' | 'ingredients' | 'process' | 'tips'
+
+export interface ContentSection {
+  id?: number
+  product_id: number
+  section_type: SectionType
+  title?: string
+  content: string
+  display_order: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ContentSectionFormData {
+  section_type: SectionType
+  title?: string
+  content: string
+  display_order: number
+}
