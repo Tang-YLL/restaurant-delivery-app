@@ -5,6 +5,7 @@ import '../providers/order_provider.dart';
 import '../providers/address_provider.dart';
 import '../../data/models/order.dart';
 import '../../data/models/address.dart';
+import '../routes/app_routes.dart';
 import 'package:intl/intl.dart';
 
 /// 确认订单页面
@@ -136,9 +137,18 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
                           ),
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      // 关闭地址选择弹窗
                       Navigator.pop(context);
-                      // TODO: 跳转到添加地址页面
+                      // 跳转到添加地址页面
+                      final result = await Navigator.pushNamed(
+                        context,
+                        AppRoutes.addressEdit,
+                      );
+                      // 如果添加成功，重新加载地址列表
+                      if (result == true && mounted) {
+                        context.read<AddressProvider>().loadAddresses();
+                      }
                     },
                     child: const Text('添加新地址'),
                   ),
