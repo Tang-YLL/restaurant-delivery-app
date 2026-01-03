@@ -95,7 +95,8 @@ class _ProductDetailPageState extends State<ProductDetailPage>
           IconButton(
             icon: const Icon(Icons.shopping_cart),
             onPressed: () {
-              Navigator.pushNamed(context, '/cart');
+              // 使用 pushReplacementNamed 替换当前路由，避免创建多个 MainPage 实例
+              Navigator.pushReplacementNamed(context, '/cart');
             },
           ),
         ],
