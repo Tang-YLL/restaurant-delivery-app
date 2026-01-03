@@ -8,6 +8,7 @@
 docs/
 ├── logs/           # 应用日志文件
 ├── scripts/        # 测试和辅助脚本
+│   └── backend/    # 后端开发脚本
 ├── reports/        # 项目报告和文档
 │   ├── backend/    # 后端相关报告
 │   ├── vue-admin/  # Vue管理后台报告
@@ -27,18 +28,27 @@ docs/
 
 ## 脚本文件 (scripts/)
 
-### 临时测试脚本
+### 临时测试脚本 (根目录)
 - `generate_product_data.py` - 生成商品测试数据
 - `generate_product_test_data.py` - 生成商品详情测试数据
 - `insert_test_reviews.py` - 插入测试评论数据
 
-### 后端测试脚本
+### 后端测试脚本 (根目录)
 - `test_admin_api.py` - 管理后台 API 测试
 - `test_api_content_sections.py` - 商品详情 API 测试
 - `test_db_models.py` - 数据库模型测试
 - `test_downgrade.py` - 数据库降级测试
 - `test_image_upload.py` - 图片上传测试
 - `test_token_debug.py` - Token 调试脚本
+
+### 后端开发脚本 (backend/)
+- `analyze_material.py` - Material素材数据分析工具 (7.8K)
+- `create_admin_simple.py` - 创建管理员账户脚本(简化版)
+- `create_admin.py` - 创建管理员账户脚本(完整版)
+- `create_demo_data.py` - 创建演示数据脚本
+- `import_material_data.py` - Material素材导入脚本 (16K)
+- `quick_analyze.sh` - 快速分析工具
+- `seed_test_data.py` - 测试数据种子脚本 (6.4K)
 
 ## 报告文档 (reports/)
 
