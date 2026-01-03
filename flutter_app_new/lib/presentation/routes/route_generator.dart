@@ -39,17 +39,17 @@ class RouteGenerator {
 
       case AppRoutes.main:
         return MaterialPageRoute(
-          builder: (_) => const MainPage(key: mainPageKey),
+          builder: (_) => MainPage(key: mainPageKey),
         );
 
       case AppRoutes.home:
         return MaterialPageRoute(
-          builder: (_) => const MainPage(key: mainPageKey, initialIndex: 0),
+          builder: (_) => MainPage(key: mainPageKey, initialIndex: 0),
         );
 
       case AppRoutes.category:
         return MaterialPageRoute(
-          builder: (_) => const MainPage(key: mainPageKey, initialIndex: 1),
+          builder: (_) => MainPage(key: mainPageKey, initialIndex: 1),
         );
 
       case AppRoutes.productDetail:
@@ -73,7 +73,7 @@ class RouteGenerator {
 
       case AppRoutes.orderList:
         return MaterialPageRoute(
-          builder: (_) => const MainPage(key: mainPageKey, initialIndex: 3),
+          builder: (_) => MainPage(key: mainPageKey, initialIndex: 3),
         );
 
       case AppRoutes.orderDetail:
@@ -128,7 +128,7 @@ class RouteGenerator {
 
       case AppRoutes.profile:
         return MaterialPageRoute(
-          builder: (_) => const MainPage(key: mainPageKey, initialIndex: 4),
+          builder: (_) => MainPage(key: mainPageKey, initialIndex: 4),
         );
 
       default:
