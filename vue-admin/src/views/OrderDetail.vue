@@ -75,8 +75,9 @@
           <el-select v-model="statusForm.status" placeholder="请选择状态">
             <el-option label="待付款" value="pending" />
             <el-option label="已付款" value="paid" />
-            <el-option label="已发货" value="shipped" />
-            <el-option label="已完成" value="delivered" />
+            <el-option label="制作中" value="preparing" />
+            <el-option label="待取餐/配送中" value="ready" />
+            <el-option label="已完成" value="completed" />
             <el-option label="已取消" value="cancelled" />
           </el-select>
         </el-form-item>
@@ -124,12 +125,21 @@ const loadOrderDetail = async () => {
   loading.value = true
   try {
     const id = Number(route.params.id)
+
+    // 验证ID是否有效
+    if (!id || isNaN(id)) {
+      ElMessage.error('无效的订单ID')
+      router.back()
+      return
+    }
+
     const data = await getOrderDetail(id)
     order.value = data
     statusForm.status = data.status
   } catch (error) {
     console.error('Failed to load order detail:', error)
     ElMessage.error('加载订单详情失败')
+    router.back()
   } finally {
     loading.value = false
   }
@@ -158,9 +168,10 @@ const handleUpdateStatus = async () => {
 const getStatusType = (status: string) => {
   const typeMap: Record<string, any> = {
     pending: 'warning',
-    paid: 'success',
-    shipped: 'primary',
-    delivered: 'info',
+    paid: 'info',
+    preparing: 'primary',
+    ready: 'primary',
+    completed: 'success',
     cancelled: 'danger'
   }
   return typeMap[status] || 'info'
@@ -170,8 +181,9 @@ const getStatusText = (status: string) => {
   const textMap: Record<string, string> = {
     pending: '待付款',
     paid: '已付款',
-    shipped: '已发货',
-    delivered: '已完成',
+    preparing: '制作中',
+    ready: '待取餐/配送中',
+    completed: '已完成',
     cancelled: '已取消'
   }
   return textMap[status] || status

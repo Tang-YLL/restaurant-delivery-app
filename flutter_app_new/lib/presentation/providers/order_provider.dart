@@ -69,8 +69,7 @@ class OrderProvider with ChangeNotifier {
     try {
       final itemsData = items.map((item) {
         return {
-          'id': item.id,
-          'product': item.product.toJson(),
+          'product_id': item.product.id,
           'quantity': item.quantity,
           'price': item.product.price,
         };
@@ -86,19 +85,38 @@ class OrderProvider with ChangeNotifier {
       );
 
       if (response.success && response.data != null) {
-        _currentOrder = Order.fromJson(response.data!);
-        _orders.insert(0, _currentOrder!);
-        _isLoading = false;
-        notifyListeners();
-        return true;
+        debugPrint('✅ 订单创建API响应成功');
+        debugPrint('📦 响应数据: ${response.data}');
+
+        try {
+          _currentOrder = Order.fromJson(response.data!);
+          debugPrint('✅ Order解析成功: orderId=${_currentOrder!.id}, orderNo=${_currentOrder!.orderNo}');
+          debugPrint('📦 订单商品数量: ${_currentOrder!.items.length}');
+
+          _orders.insert(0, _currentOrder!);
+          debugPrint('✅ 订单已添加到列表，当前订单总数: ${_orders.length}');
+
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        } catch (parseError) {
+          debugPrint('❌ Order解析失败: $parseError');
+          debugPrint('堆栈: ${StackTrace.current}');
+          _errorMessage = '订单数据解析失败: $parseError';
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
       }
 
+      debugPrint('❌ 订单创建失败: ${response.message}');
       _errorMessage = response.message ?? '创建订单失败';
       _isLoading = false;
       notifyListeners();
       return false;
-    } catch (e) {
-      debugPrint('创建订单失败: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ 创建订单异常: $e');
+      debugPrint('堆栈: $stackTrace');
       _errorMessage = '创建订单失败: $e';
       _isLoading = false;
       notifyListeners();
@@ -177,36 +195,48 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  /// 模拟支付
+  /// 支付订单
   Future<bool> payOrder(String orderId) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      debugPrint('💰 开始支付订单: $orderId');
+      final response = await _repository.payOrder(orderId);
 
-      // 更新订单状态为"制作中"
-      final index = _orders.indexWhere((o) => o.id == orderId);
-      if (index >= 0) {
-        _orders[index] = _orders[index].copyWith(
-          status: OrderStatus.preparing,
-          paidAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-      }
-      if (_currentOrder?.id == orderId) {
-        _currentOrder = _currentOrder?.copyWith(
-          status: OrderStatus.preparing,
-          paidAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
+      if (response.success && response.data != null) {
+        debugPrint('✅ 支付成功，解析订单数据');
+        final updatedOrder = Order.fromJson(response.data!);
+
+        // 更新列表中的订单
+        final index = _orders.indexWhere((o) => o.id == orderId);
+        if (index >= 0) {
+          _orders[index] = updatedOrder;
+          debugPrint('✅ 订单列表已更新: index=$index, status=${updatedOrder.status.label}');
+        }
+
+        // 更新当前订单
+        if (_currentOrder?.id == orderId) {
+          _currentOrder = updatedOrder;
+          debugPrint('✅ 当前订单已更新');
+        }
+
+        _isLoading = false;
+        notifyListeners();
+        debugPrint('✅ 支付订单完成');
+        return true;
       }
 
+      debugPrint('❌ 支付失败: ${response.message}');
+      _errorMessage = response.message ?? '支付失败';
       _isLoading = false;
       notifyListeners();
-      return true;
-    } catch (e) {
-      debugPrint('支付失败: $e');
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('❌ 支付订单异常: $e');
+      debugPrint('堆栈: $stackTrace');
+      _errorMessage = '支付失败: $e';
       _isLoading = false;
       notifyListeners();
       return false;

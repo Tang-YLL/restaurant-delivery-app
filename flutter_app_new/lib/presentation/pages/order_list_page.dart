@@ -19,7 +19,9 @@ class _OrderListPageState extends State<OrderListPage> {
   final List<Map<String, String>> _statusFilters = [
     {'value': 'all', 'label': '全部'},
     {'value': 'pending', 'label': '待付款'},
+    {'value': 'paid', 'label': '已付款'},
     {'value': 'preparing', 'label': '制作中'},
+    {'value': 'ready', 'label': '待取餐'},
     {'value': 'delivering', 'label': '配送中'},
     {'value': 'completed', 'label': '已完成'},
   ];
@@ -152,58 +154,113 @@ class _OrderListPageState extends State<OrderListPage> {
               ),
               const Divider(height: 16),
               // 商品列表
-              ...order.items.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            item.product.imageUrl,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
+              ...order.items.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+
+                // 调试日志
+                print('📦 [订单列表] 商品 $index: ${item.productName}');
+                print('🖼️ [订单列表] 图片URL: ${item.productImage}');
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: item.productImage != null && item.productImage!.isNotEmpty
+                            ? Image.network(
+                                item.productImage!,
                                 width: 60,
                                 height: 60,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.restaurant),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.product.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('❌ [订单列表] 图片加载失败: ${item.productImage}');
+                                  print('   错误: $error');
+                                  return Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.restaurant_menu,
+                                      color: Colors.grey[400],
+                                      size: 30,
+                                    ),
+                                  );
+                                },
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) {
+                                    print('✅ [订单列表] 图片加载成功: ${item.productImage}');
+                                    return child;
+                                  }
+                                  return Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                        value: loadingProgress.expectedTotalBytes != null
+                                            ? loadingProgress.cumulativeBytesLoaded /
+                                                loadingProgress.expectedTotalBytes!
+                                            : null,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.restaurant_menu,
+                                  color: Colors.grey[400],
+                                  size: 30,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'x${item.quantity}',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.productName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'x${item.quantity}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '¥${item.subtotal.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      ),
+                      Text(
+                        '¥${item.subtotal.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
-                  )),
+                      ),
+                    ],
+                  ),
+                );
+              }),
               const Divider(height: 16),
               // 订单底部
               Row(
@@ -232,6 +289,11 @@ class _OrderListPageState extends State<OrderListPage> {
                       onPressed: () {
                         _showCancelDialog(order.id);
                       },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                        side: BorderSide(color: Colors.grey[300]!),
+                        minimumSize: const Size(80, 36),
+                      ),
                       child: const Text('取消订单'),
                     ),
                     const SizedBox(width: 8),
@@ -242,6 +304,7 @@ class _OrderListPageState extends State<OrderListPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(80, 36),
                       ),
                       child: const Text('去支付'),
                     ),
@@ -265,9 +328,17 @@ class _OrderListPageState extends State<OrderListPage> {
         color = Colors.orange;
         label = '待付款';
         break;
+      case OrderStatus.paid:
+        color = Colors.teal;
+        label = '已付款';
+        break;
       case OrderStatus.preparing:
         color = Colors.blue;
         label = '制作中';
+        break;
+      case OrderStatus.ready:
+        color = Colors.purple;
+        label = '待取餐';
         break;
       case OrderStatus.delivering:
         color = Colors.green;

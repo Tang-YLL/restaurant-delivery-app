@@ -31,9 +31,9 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
     super.initState();
     // 初始化每个商品的评分和控制器
     for (var item in widget.order.items) {
-      _ratings[item.product.id] = 5;
-      _controllers[item.product.id] = TextEditingController(text: '');
-      _images[item.product.id] = [];
+      _ratings[item.productId.toString()] = 5;
+      _controllers[item.productId.toString()] = TextEditingController(text: '');
+      _images[item.productId.toString()] = [];
     }
   }
 
@@ -110,7 +110,7 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
   }
 
   Widget _buildProductReviewCard(OrderItem item) {
-    final productId = item.product.id;
+    final productId = item.productId.toString();
     final rating = _ratings[productId] ?? 5;
     final controller = _controllers[productId];
     final images = _images[productId] ?? [];
@@ -128,7 +128,7 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    item.product.imageUrl,
+                    item.productImage ?? '',
                     width: 80,
                     height: 80,
                     fit: BoxFit.cover,
@@ -148,14 +148,14 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.product.name,
+                        item.productName,
                         style: Theme.of(context).textTheme.titleMedium,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '¥${item.product.price.toStringAsFixed(2)}',
+                        '¥${item.price.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.bold,
@@ -320,14 +320,15 @@ class _OrderReviewPageState extends State<OrderReviewPage> {
 
       // 为每个商品创建评价
       for (var item in widget.order.items) {
+        final productId = item.productId.toString();
         final review = Review(
-          id: 'review_${DateTime.now().millisecondsSinceEpoch}_${item.product.id}',
+          id: 'review_${DateTime.now().millisecondsSinceEpoch}_$productId',
           orderId: widget.order.id,
-          productId: item.product.id,
-          productName: item.product.name,
-          productImage: item.product.imageUrl,
-          rating: _ratings[item.product.id] ?? 5,
-          content: _controllers[item.product.id]?.text.trim() ?? '',
+          productId: productId,
+          productName: item.productName,
+          productImage: item.productImage ?? '',
+          rating: _ratings[productId] ?? 5,
+          content: _controllers[productId]?.text.trim() ?? '',
           images: [], // 实际应该上传图片并获取URL
           userId: 'current_user_id', // 从AuthProvider获取
           userName: '当前用户', // 从AuthProvider获取

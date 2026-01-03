@@ -157,4 +157,28 @@ class OrderRepository {
       return ApiResponse.error(e.toString());
     }
   }
+
+  /// 支付订单
+  Future<ApiResponse<Map<String, dynamic>>> payOrder(String orderId) async {
+    try {
+      final response = await _dio.put('/orders/$orderId/pay');
+
+      if (response.statusCode == 200 && response.data != null) {
+        return ApiResponse.success(
+          response.data as Map<String, dynamic>,
+          message: '支付成功',
+        );
+      }
+
+      return ApiResponse.error('支付失败');
+    } on DioException catch (e) {
+      String errorMsg = '支付失败';
+      if (e.response?.data != null) {
+        errorMsg = e.response?.data['message'] ?? errorMsg;
+      }
+      return ApiResponse.error(errorMsg);
+    } catch (e) {
+      return ApiResponse.error(e.toString());
+    }
+  }
 }

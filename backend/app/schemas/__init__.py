@@ -302,8 +302,16 @@ class OrderItemResponse(BaseModel):
     created_at: datetime
 
 
+class OrderItemInput(BaseModel):
+    """订单商品输入Schema"""
+    product_id: int = Field(..., description="商品ID")
+    quantity: int = Field(..., gt=0, description="数量")
+    price: Decimal = Field(..., gt=0, description="单价")
+
+
 class OrderCreate(BaseModel):
     """订单创建Schema"""
+    items: List[OrderItemInput] = Field(..., min_length=1, description="订单商品列表")
     delivery_type: DeliveryType = Field(DeliveryType.PICKUP, description="配送类型")
     delivery_address: Optional[str] = Field(None, max_length=500, description="配送地址")
     pickup_name: Optional[str] = Field(None, max_length=100, description="自提人姓名")

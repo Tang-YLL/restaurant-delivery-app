@@ -20,7 +20,7 @@ export interface LoginResponse {
 }
 
 // 订单相关类型
-export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+export type OrderStatus = 'pending' | 'paid' | 'preparing' | 'ready' | 'completed' | 'cancelled'
 
 export interface OrderItem {
   id: number
@@ -42,6 +42,7 @@ export interface Order {
   items: OrderItem[]
   totalAmount: number
   status: OrderStatus
+  deliveryType: string
   paymentMethod: string
   remark?: string
   createdAt: string
@@ -54,6 +55,8 @@ export interface OrderQuery {
   status?: OrderStatus
   orderNo?: string
   userName?: string
+  userPhone?: string
+  deliveryType?: string
   startDate?: string
   endDate?: string
 }

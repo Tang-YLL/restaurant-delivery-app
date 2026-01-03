@@ -160,13 +160,17 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
     final cartProvider = context.read<CartProvider>();
     final orderProvider = context.read<OrderProvider>();
 
+    debugPrint('🛒 开始创建订单，购物车商品数: ${cartProvider.items.length}');
+
     if (cartProvider.items.isEmpty) {
+      debugPrint('❌ 购物车为空');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('购物车为空')),
       );
       return;
     }
 
+    debugPrint('📤 调用orderProvider.createOrder');
     final success = await orderProvider.createOrder(
       items: cartProvider.items,
       deliveryType: _deliveryType,
@@ -178,19 +182,31 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
       remark: _remarkController.text.isEmpty ? null : _remarkController.text,
     );
 
+    debugPrint('📥 createOrder返回结果: $success');
+    debugPrint('📦 currentOrder: ${orderProvider.currentOrder}');
+    debugPrint('📦 errorMessage: ${orderProvider.errorMessage}');
+
     if (success && mounted) {
+      debugPrint('✅ 订单创建成功，准备清空购物车并跳转');
       // 清空购物车
       cartProvider.clearCart();
+      debugPrint('🗑️ 购物车已清空');
+
       // 跳转到订单详情
       if (orderProvider.currentOrder != null) {
+        debugPrint('🚀 准备跳转到订单详情页，orderId: ${orderProvider.currentOrder!.id}');
         Navigator.of(context).pushReplacementNamed(
           '/order-detail',
           arguments: orderProvider.currentOrder!.id,
         );
+        debugPrint('✅ 跳转命令已执行');
+      } else {
+        debugPrint('⚠️ currentOrder为null，无法跳转');
       }
     } else if (mounted) {
+      debugPrint('❌ 订单创建失败');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('创建订单失败')),
+        SnackBar(content: Text(orderProvider.errorMessage ?? '创建订单失败')),
       );
     }
   }
@@ -466,7 +482,7 @@ class _OrderConfirmPageState extends State<OrderConfirmPage> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
-                            item.product.imageUrl,
+                            item.product.imageUrl ?? "",
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,

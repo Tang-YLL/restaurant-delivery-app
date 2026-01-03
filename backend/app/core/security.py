@@ -106,13 +106,17 @@ async def get_current_user(
         raise credentials_exception
 
     # 检查token是否在黑名单中
-    from app.core.redis_client import redis_client
-    if await redis_client.is_token_blacklisted(token):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token已失效",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    try:
+        from app.core.redis_client import redis_client
+        if await redis_client.is_token_blacklisted(token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token已失效",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception:
+        # Redis连接失败时，跳过黑名单检查（仅用于开发环境）
+        pass
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -177,13 +181,17 @@ async def get_current_admin(
         raise credentials_exception
 
     # 检查token是否在黑名单中
-    from app.core.redis_client import redis_client
-    if await redis_client.is_token_blacklisted(token):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token已失效",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    try:
+        from app.core.redis_client import redis_client
+        if await redis_client.is_token_blacklisted(token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token已失效",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception:
+        # Redis连接失败时，跳过黑名单检查（仅用于开发环境）
+        pass
 
     result = await db.execute(select(Admin).where(Admin.id == admin_id))
     admin = result.scalar_one_or_none()

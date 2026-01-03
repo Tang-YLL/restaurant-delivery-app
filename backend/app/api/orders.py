@@ -3,6 +3,7 @@
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import Optional
 
 from app.core.database import get_db
@@ -24,25 +25,43 @@ async def create_order(
     current_user: User = Depends(get_current_user)
 ):
     """
-    创建订单(从购物车)
+    创建订单
 
-    从当前用户的购物车创建订单,支持外卖配送和到店自取两种模式
+    直接创建订单,支持外卖配送和到店自取两种模式
+    - 需要在请求中提供订单商品列表
     - 自动计算订单金额(商品小计 + 配送费 - 优惠)
     - 锁定商品库存(防止超卖)
     - 生成唯一订单号
-    - 清空购物车
     """
+    import sys
+    import traceback
+
     try:
-        service = OrderService()
+        print("DEBUG[API]: 进入create_order函数", file=sys.stderr)
+        print(f"DEBUG[API]: current_user.id = {current_user.id}", file=sys.stderr)
 
         # 验证配送信息
+        print("DEBUG[API]: 开始验证配送信息", file=sys.stderr)
         if order_data.delivery_type == "delivery" and not order_data.delivery_address:
             raise HTTPException(status_code=400, detail="外卖配送需要提供配送地址")
 
         if order_data.delivery_type == "pickup" and (not order_data.pickup_name or not order_data.pickup_phone):
             raise HTTPException(status_code=400, detail="到店自取需要提供自提人姓名和电话")
 
-        # 创建订单
+        print("DEBUG[API]: 配送信息验证通过", file=sys.stderr)
+
+        # 转换items为字典列表
+        items_data = [
+            {
+                "product_id": item.product_id,
+                "quantity": item.quantity,
+                "price": float(item.price)
+            }
+            for item in order_data.items
+        ]
+        print(f"DEBUG[API]: 订单包含{len(items_data)}个商品", file=sys.stderr)
+
+        service = OrderService()
         order = await service.create_order_from_cart(
             user_id=current_user.id,
             delivery_type=order_data.delivery_type,
@@ -50,9 +69,24 @@ async def create_order(
             pickup_name=order_data.pickup_name,
             pickup_phone=order_data.pickup_phone,
             remark=order_data.remark,
+            items=items_data,
             db=db
         )
 
+        print("DEBUG[API]: 订单创建成功,准备提交", file=sys.stderr)
+
+        # 在commit之前eager load order_items
+        from sqlalchemy.orm import selectinload
+        from app.models import Order
+        result = await db.execute(
+            select(Order).options(selectinload(Order.order_items)).where(Order.id == order.id)
+        )
+        order = result.scalar_one()
+
+        # 提交事务
+        await db.commit()
+
+        print("DEBUG[API]: 事务提交完成", file=sys.stderr)
         return OrderResponse.model_validate(order)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -111,8 +145,17 @@ async def get_order_detail(
     返回指定订单的详细信息,包含订单商品列表
     """
     try:
-        service = OrderService()
-        order = await service.get_order_detail(order_id, current_user.id, db)
+        # Eager load order_items以避免MissingGreenlet错误
+        from sqlalchemy.orm import selectinload
+        from app.models import Order
+        result = await db.execute(
+            select(Order).options(selectinload(Order.order_items)).where(Order.id == order_id)
+        )
+        order = result.scalar_one()
+
+        # 验证订单属于当前用户
+        if order.user_id != current_user.id:
+            raise ValueError("订单不存在")
 
         return OrderResponse.model_validate(order)
     except ValueError as e:
@@ -121,7 +164,7 @@ async def get_order_detail(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.put("/{order_id}/cancel", response_model=MessageResponse)
+@router.post("/{order_id}/cancel", response_model=MessageResponse)
 async def cancel_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
@@ -155,12 +198,56 @@ async def pay_order(
     模拟支付订单
 
     模拟支付功能(仅待付款状态可以支付)
-    - 更新订单状态为已付款
+    - 更新订单状态为制作中
     - 后续可以接入真实支付系统
     """
     try:
         service = OrderService()
         order = await service.pay_order(order_id, current_user.id, db)
+
+        # 提交事务以保存状态更改
+        await db.commit()
+
+        # Eager load order_items以避免MissingGreenlet错误
+        from sqlalchemy.orm import selectinload
+        from app.models import Order
+        result = await db.execute(
+            select(Order).options(selectinload(Order.order_items)).where(Order.id == order.id)
+        )
+        order = result.scalar_one()
+
+        return OrderResponse.model_validate(order)
+    except ValueError as e:
+        await db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{order_id}/confirm", response_model=OrderResponse)
+async def confirm_order(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    确认收货
+
+    确认订单已完成(仅配送中状态可以确认)
+    - 更新订单状态为已完成
+    """
+    try:
+        service = OrderService()
+        order = await service.confirm_order(order_id, current_user.id, db)
+
+        # Eager load order_items以避免MissingGreenlet错误
+        from sqlalchemy.orm import selectinload
+        from app.models import Order
+        result = await db.execute(
+            select(Order).options(selectinload(Order.order_items)).where(Order.id == order.id)
+        )
+        order = result.scalar_one()
 
         return OrderResponse.model_validate(order)
     except ValueError as e:

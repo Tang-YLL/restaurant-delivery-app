@@ -3,6 +3,9 @@ class ApiConstants {
   // 基础URL (可根据环境切换)
   static const String baseUrl = 'http://localhost:8000/api';
 
+  // 图片基础URL (用于拼接相对路径)
+  static const String baseImageUrl = 'http://localhost:8000';
+
   // API版本
   static const String apiVersion = '/v1';
 

@@ -1,12 +1,14 @@
 import 'package:hive/hive.dart';
-import 'product.dart';
+import '../../utils/image_utils.dart';
 
 part 'order.g.dart';
 
 /// 订单状态枚举
 enum OrderStatus {
   pending,    // 待付款
+  paid,       // 已付款
   preparing,  // 制作中
+  ready,      // 待取餐/配送中
   delivering, // 配送中
   completed,  // 已完成
   cancelled,  // 已取消
@@ -18,8 +20,12 @@ extension OrderStatusExtension on OrderStatus {
     switch (this) {
       case OrderStatus.pending:
         return '待付款';
+      case OrderStatus.paid:
+        return '已付款';
       case OrderStatus.preparing:
         return '制作中';
+      case OrderStatus.ready:
+        return '待取餐';
       case OrderStatus.delivering:
         return '配送中';
       case OrderStatus.completed:
@@ -33,8 +39,12 @@ extension OrderStatusExtension on OrderStatus {
     switch (this) {
       case OrderStatus.pending:
         return 'pending';
+      case OrderStatus.paid:
+        return 'paid';
       case OrderStatus.preparing:
         return 'preparing';
+      case OrderStatus.ready:
+        return 'ready';
       case OrderStatus.delivering:
         return 'delivering';
       case OrderStatus.completed:
@@ -48,8 +58,12 @@ extension OrderStatusExtension on OrderStatus {
     switch (value) {
       case 'pending':
         return OrderStatus.pending;
+      case 'paid':
+        return OrderStatus.paid;
       case 'preparing':
         return OrderStatus.preparing;
+      case 'ready':
+        return OrderStatus.ready;
       case 'delivering':
         return OrderStatus.delivering;
       case 'completed':
@@ -107,17 +121,25 @@ class OrderItem {
   final String id;
 
   @HiveField(1)
-  final Product product;
+  final int productId;
 
   @HiveField(2)
-  final int quantity;
+  final String productName;
 
   @HiveField(3)
+  final String? productImage;
+
+  @HiveField(4)
+  final int quantity;
+
+  @HiveField(5)
   final double price;
 
   OrderItem({
     required this.id,
-    required this.product,
+    required this.productId,
+    required this.productName,
+    this.productImage,
     required this.quantity,
     required this.price,
   });
@@ -126,18 +148,38 @@ class OrderItem {
   double get subtotal => price * quantity;
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
+    // 获取原始图片路径
+    final String? rawImagePath = json['product_image'] as String?;
+
+    // 转换为完整URL
+    final String fullImageUrl = ImageUtils.getImageUrl(rawImagePath);
+
+    // 添加调试日志
+    print('🖼️ [OrderItem] 原始图片路径: $rawImagePath');
+    print('🖼️ [OrderItem] 转换后URL: $fullImageUrl');
+
     return OrderItem(
-      id: json['id'] as String,
-      product: Product.fromJson(json['product'] as Map<String, dynamic>),
-      quantity: json['quantity'] as int,
-      price: (json['price'] as num).toDouble(),
+      id: json['id']?.toString() ?? '',  // 处理null和int
+      productId: json['product_id'] is String
+          ? int.parse(json['product_id'] as String)
+          : json['product_id'] as int,
+      productName: json['product_name'] as String? ?? '',
+      productImage: fullImageUrl,  // 使用转换后的完整URL
+      quantity: json['quantity'] is String
+          ? int.parse(json['quantity'] as String)
+          : json['quantity'] as int,
+      price: json['price'] is String
+          ? double.parse(json['price'] as String)
+          : (json['price'] as num).toDouble(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'product': product.toJson(),
+      'product_id': productId,
+      'product_name': productName,
+      'product_image': productImage,
       'quantity': quantity,
       'price': price,
     };
@@ -145,13 +187,17 @@ class OrderItem {
 
   OrderItem copyWith({
     String? id,
-    Product? product,
+    int? productId,
+    String? productName,
+    String? productImage,
     int? quantity,
     double? price,
   }) {
     return OrderItem(
       id: id ?? this.id,
-      product: product ?? this.product,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      productImage: productImage ?? this.productImage,
       quantity: quantity ?? this.quantity,
       price: price ?? this.price,
     );
@@ -232,29 +278,31 @@ class Order {
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
-      id: json['id'] as String,
-      orderNo: json['orderNo'] as String,
-      items: (json['items'] as List)
-          .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      totalAmount: (json['totalAmount'] as num).toDouble(),
-      deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? 0.0,
-      status: OrderStatusExtension.fromString(json['status'] as String),
-      deliveryType: DeliveryTypeExtension.fromString(json['deliveryType'] as String),
-      deliveryAddress: json['deliveryAddress'] as String?,
-      contactName: json['contactName'] as String?,
-      contactPhone: json['contactPhone'] as String?,
+      id: json['id']?.toString() ?? '',  // 处理null和int
+      orderNo: json['order_number'] as String? ?? '',
+      items: (json['order_items'] as List?)
+          ?.map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
+          .toList() ?? [],
+      totalAmount: json['total_amount'] is String
+          ? double.parse(json['total_amount'] as String)
+          : (json['total_amount'] as num?)?.toDouble() ?? 0.0,
+      deliveryFee: json['delivery_fee'] is String
+          ? double.parse(json['delivery_fee'] as String)
+          : (json['delivery_fee'] as num?)?.toDouble() ?? 0.0,
+      status: OrderStatusExtension.fromString(json['status'] as String? ?? 'pending'),
+      deliveryType: DeliveryTypeExtension.fromString(json['delivery_type'] as String? ?? 'delivery'),
+      deliveryAddress: json['delivery_address'] as String?,
+      contactName: json['pickup_name']?.toString(),
+      contactPhone: json['pickup_phone']?.toString(),
       remark: json['remark'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
           : null,
-      paidAt: json['paidAt'] != null
-          ? DateTime.parse(json['paidAt'] as String)
-          : null,
-      completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'] as String)
-          : null,
+      paidAt: null,  // 后端不返回paid_at
+      completedAt: null,  // 后端不返回completed_at
     );
   }
 
