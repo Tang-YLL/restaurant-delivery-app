@@ -61,8 +61,9 @@ class RouteGenerator {
         return _errorRoute();
 
       case AppRoutes.cart:
+        // 购物车作为独立页面，而不是MainPage的tab
         return MaterialPageRoute(
-          builder: (_) => const MainPage(key: mainPageKey, initialIndex: 2),
+          builder: (_) => const CartPage(),
         );
 
       case AppRoutes.orderConfirm:
