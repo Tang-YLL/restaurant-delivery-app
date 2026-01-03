@@ -1,5 +1,115 @@
-# CCPM - Local workspace files
-.claude/epics/
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
 
-# Local settings
-.claude/settings.local.json
+# IDE配置
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+.spyproject/
+.pytest_cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/
+.pnpm-debug.log*
+
+# Flutter
+flutter_app/build/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.packages
+flutter_app/.pub-cache/
+flutter_app/.pub/
+flutter_app/pubspec.lock
+
+# Vue3
+vue-admin/node_modules/
+vue-admin/dist/
+vue-admin/.env.local
+vue-admin/.env.*.local
+vue-admin/npm-debug.log*
+vue-admin/yarn-debug.log*
+vue-admin/yarn-error.log*
+vue-admin/pnpm-debug.log*
+
+# Docker
+*.log
+
+# 临时文件
+.spec-workflow/
+*.tmp
+*.bak
+*.swp
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 日志文件
+*.log
+logs/
+backend/logs/
+
+# SSL证书
+nginx/ssl/*.key
+nginx/ssl/*.pem
+nginx/ssl/*.crt
+
+# 备份文件
+*.backup
+*.bak
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# 项目特定
+Material/material/*/  # 如果Material太大，可以忽略子文件夹
+backend/test_data/
+*.pid
+*.seed
+*.pid.lock

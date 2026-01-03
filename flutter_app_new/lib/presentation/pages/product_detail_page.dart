@@ -1,0 +1,261 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/product_provider.dart';
+import '../providers/cart_provider.dart';
+import '../../data/models/product.dart';
+import '../../data/models/content_section.dart';
+import '../../widgets/story_section_widget.dart';
+import '../../widgets/nutrition_table_widget.dart';
+import '../../widgets/lazy_load_image_widget.dart';
+import '../../widgets/optimized_html_content_widget.dart';
+import '../../services/preloading_service.dart';
+
+/// 商品详情页
+///
+/// 性能优化特性：
+/// - 使用AutomaticKeepAliveClientMixin保持页面状态
+/// - 懒加载图片组件
+/// - 优化的HTML内容渲染
+/// - 图片预加载服务
+/// - 弹性滚动
+class ProductDetailPage extends StatefulWidget {
+  final String productId;
+
+  const ProductDetailPage({super.key, required this.productId});
+
+  @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage>
+    with AutomaticKeepAliveClientMixin {
+  Product? _product;
+  bool _isLoading = true;
+  final PreloadingService _preloadingService = PreloadingService();
+
+  @override
+  bool get wantKeepAlive => true; // 保持页面状态
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProduct();
+  }
+
+  Future<void> _loadProduct() async {
+    final provider = context.read<ProductProvider>();
+    // 调用获取完整详情的API
+    final product = await provider.getFullProductDetails(widget.productId);
+
+    if (mounted) {
+      setState(() {
+        _product = product;
+        _isLoading = false;
+      });
+
+      // 预加载商品图片
+      if (product != null) {
+        _preloadingService.preloadProductImages(product, priority: false);
+      }
+    }
+  }
+
+  void _addToCart() {
+    if (_product == null) return;
+
+    context.read<CartProvider>().addToCart(_product!);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('已添加到购物车')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // 必须调用，用于AutomaticKeepAliveClientMixin
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('商品详情')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_product == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('商品详情')),
+        body: const Center(child: Text('商品不存在')),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_product!.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              Navigator.pushNamed(context, '/cart');
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(), // 弹性滚动
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 商品图片 - 使用懒加载
+            LazyLoadImageWidget(
+              imageUrl: _product!.imageUrl,
+              width: double.infinity,
+              height: 300,
+              fit: BoxFit.cover,
+              visibilityThreshold: 0.5,
+            ),
+
+            // 商品信息
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 商品名称
+                  Text(
+                    _product!.name,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // 商品描述
+                  Text(
+                    _product!.description,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey,
+                        ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 价格
+                  Row(
+                    children: [
+                      Text(
+                        '¥${_product!.price.toStringAsFixed(2)}',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      if (_product!.originalPrice != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '¥${_product!.originalPrice!.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.grey,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 评分和销量
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 20),
+                      const SizedBox(width: 4),
+                      Text(_product!.rating.toString()),
+                      const SizedBox(width: 16),
+                      Text('销量 ${_product!.sales}'),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 标签
+                  if (_product!.tags != null && _product!.tags!.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      children: _product!.tags!
+                          .map((tag) => Chip(
+                                label: Text(tag),
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                              ))
+                          .toList(),
+                    ),
+                ],
+              ),
+            ),
+
+            // 新增：内容分区列表
+            if (_product!.contentSections != null && _product!.contentSections!.isNotEmpty)
+              ..._product!.contentSections!.map((section) => _buildSectionWidget(section)),
+
+            // 新增：营养成分表
+            if (_product!.nutritionFacts != null)
+              NutritionTableWidget(nutritionData: _product!.nutritionFacts!),
+          ],
+        ),
+      ),
+
+      // 底部添加购物车按钮
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _addToCart,
+              child: const Text('加入购物车'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 根据分区类型构建不同的Widget
+  Widget _buildSectionWidget(ContentSection section) {
+    switch (section.sectionType) {
+      case 'story':
+        return StorySectionWidget(
+          content: section.content,
+          title: section.title,
+        );
+      case 'nutrition':
+      case 'ingredients':
+      case 'process':
+      case 'tips':
+      default:
+        return OptimizedHtmlContentWidget(
+          content: section.content,
+          title: section.title ?? _getDefaultTitle(section.sectionType),
+          visibilityThreshold: 0.3,
+        );
+    }
+  }
+
+  // 获取默认标题
+  String _getDefaultTitle(String sectionType) {
+    switch (sectionType) {
+      case 'ingredients':
+        return '食材来源';
+      case 'process':
+        return '制作工艺';
+      case 'tips':
+        return '食用贴士';
+      case 'nutrition':
+        return '营养信息';
+      default:
+        return '详情';
+    }
+  }
+}
