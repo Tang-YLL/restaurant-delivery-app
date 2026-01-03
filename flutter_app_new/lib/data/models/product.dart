@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'content_section.dart';
 
 part 'product.g.dart';
 
@@ -16,6 +17,10 @@ class Product {
   final int stock;
   final List<String>? tags;
 
+  // 新增字段 - 商品详情内容
+  final List<ContentSection>? contentSections;
+  final Map<String, dynamic>? nutritionFacts;
+
   Product({
     required this.id,
     required this.name,
@@ -28,6 +33,8 @@ class Product {
     required this.sales,
     required this.stock,
     this.tags,
+    this.contentSections,
+    this.nutritionFacts,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -69,6 +76,14 @@ class Product {
       sales: json['sales_count'] as int? ?? 0, // 后端使用sales_count
       stock: json['stock'] as int? ?? 0,
       tags: null, // 后端没有tags字段
+      // 解析contentSections
+      contentSections: json['content_sections'] != null
+          ? (json['content_sections'] as List)
+              .map((e) => ContentSection.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : null,
+      // 解析nutritionFacts
+      nutritionFacts: json['nutrition_facts'] as Map<String, dynamic>?,
     );
   }
 
@@ -97,6 +112,8 @@ class Product {
     int? sales,
     int? stock,
     List<String>? tags,
+    List<ContentSection>? contentSections,
+    Map<String, dynamic>? nutritionFacts,
   }) {
     return Product(
       id: id ?? this.id,
@@ -110,6 +127,8 @@ class Product {
       sales: sales ?? this.sales,
       stock: stock ?? this.stock,
       tags: tags ?? this.tags,
+      contentSections: contentSections ?? this.contentSections,
+      nutritionFacts: nutritionFacts ?? this.nutritionFacts,
     );
   }
 }

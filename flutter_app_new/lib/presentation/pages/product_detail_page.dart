@@ -3,6 +3,10 @@ import 'package:provider/provider.dart';
 import '../providers/product_provider.dart';
 import '../providers/cart_provider.dart';
 import '../../data/models/product.dart';
+import '../../data/models/content_section.dart';
+import '../../widgets/html_content_widget.dart';
+import '../../widgets/story_section_widget.dart';
+import '../../widgets/nutrition_table_widget.dart';
 
 /// 商品详情页
 class ProductDetailPage extends StatefulWidget {
@@ -26,7 +30,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Future<void> _loadProduct() async {
     final provider = context.read<ProductProvider>();
-    final product = await provider.getProductDetail(widget.productId);
+    // 调用获取完整详情的API
+    final product = await provider.getFullProductDetails(widget.productId);
 
     if (mounted) {
       setState(() {
@@ -170,6 +175,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ],
               ),
             ),
+
+            // 新增：内容分区列表
+            if (_product!.contentSections != null && _product!.contentSections!.isNotEmpty)
+              ..._product!.contentSections!.map((section) => _buildSectionWidget(section)),
+
+            // 新增：营养成分表
+            if (_product!.nutritionFacts != null)
+              NutritionTableWidget(nutritionData: _product!.nutritionFacts!),
           ],
         ),
       ),
@@ -188,5 +201,41 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
       ),
     );
+  }
+
+  // 根据分区类型构建不同的Widget
+  Widget _buildSectionWidget(ContentSection section) {
+    switch (section.sectionType) {
+      case 'story':
+        return StorySectionWidget(
+          content: section.content,
+          title: section.title,
+        );
+      case 'nutrition':
+      case 'ingredients':
+      case 'process':
+      case 'tips':
+      default:
+        return HtmlContentWidget(
+          content: section.content,
+          title: section.title ?? _getDefaultTitle(section.sectionType),
+        );
+    }
+  }
+
+  // 获取默认标题
+  String _getDefaultTitle(String sectionType) {
+    switch (sectionType) {
+      case 'ingredients':
+        return '食材来源';
+      case 'process':
+        return '制作工艺';
+      case 'tips':
+        return '食用贴士';
+      case 'nutrition':
+        return '营养信息';
+      default:
+        return '详情';
+    }
   }
 }

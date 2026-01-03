@@ -83,6 +83,21 @@ class ProductProvider with ChangeNotifier {
     }
   }
 
+  /// 获取商品完整详情（包含内容分区和营养信息）
+  Future<Product?> getFullProductDetails(String id) async {
+    try {
+      final response = await _repository.getFullProductDetails(id);
+
+      if (response.success && response.data != null) {
+        return response.data!;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('获取商品完整详情失败: $e');
+      return null;
+    }
+  }
+
   /// 按分类筛选
   void filterByCategory(String? categoryId) {
     loadProducts(categoryId: categoryId, search: _searchQuery);

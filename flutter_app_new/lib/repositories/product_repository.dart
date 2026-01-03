@@ -69,6 +69,24 @@ class ProductRepository {
     }
   }
 
+  /// 获取商品完整详情（包含内容分区和营养信息）
+  Future<ApiResponse<Product>> getFullProductDetails(String id) async {
+    try {
+      final response = await _dio.get('/products/$id/full-details');
+
+      if (response.statusCode == 200 && response.data != null) {
+        final product = Product.fromJson(response.data);
+        return ApiResponse.success(product);
+      }
+
+      return ApiResponse.error('获取商品完整详情失败');
+    } on DioException catch (e) {
+      return ApiResponse.error(e.message ?? '网络请求失败');
+    } catch (e) {
+      return ApiResponse.error(e.toString());
+    }
+  }
+
   /// 获取分类列表
   Future<ApiResponse<List<data_models.Category>>> getCategories() async {
     try {
