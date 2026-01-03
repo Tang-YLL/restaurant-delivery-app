@@ -1,8 +1,10 @@
 ---
 name: 增加商品详情介绍
-status: backlog
+status: completed
 created: 2026-01-02T15:38:30Z
-progress: 0%
+updated: 2026-01-03T06:33:07Z
+completed: 2026-01-03T06:33:07Z
+progress: 100%
 prd: .claude/prds/增加商品详情介绍.md
 github: [Will be updated when synced to GitHub]
 ---

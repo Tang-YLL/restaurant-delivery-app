@@ -86,6 +86,7 @@
     <ContentSectionForm
       v-model="dialogVisible"
       :section="currentSection"
+      :product-id="productId"
       @save="handleSave"
     />
   </div>

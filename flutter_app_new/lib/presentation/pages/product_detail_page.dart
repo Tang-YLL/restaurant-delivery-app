@@ -4,11 +4,20 @@ import '../providers/product_provider.dart';
 import '../providers/cart_provider.dart';
 import '../../data/models/product.dart';
 import '../../data/models/content_section.dart';
-import '../../widgets/html_content_widget.dart';
 import '../../widgets/story_section_widget.dart';
 import '../../widgets/nutrition_table_widget.dart';
+import '../../widgets/lazy_load_image_widget.dart';
+import '../../widgets/optimized_html_content_widget.dart';
+import '../../services/preloading_service.dart';
 
 /// 商品详情页
+///
+/// 性能优化特性：
+/// - 使用AutomaticKeepAliveClientMixin保持页面状态
+/// - 懒加载图片组件
+/// - 优化的HTML内容渲染
+/// - 图片预加载服务
+/// - 弹性滚动
 class ProductDetailPage extends StatefulWidget {
   final String productId;
 
@@ -18,9 +27,14 @@ class ProductDetailPage extends StatefulWidget {
   State<ProductDetailPage> createState() => _ProductDetailPageState();
 }
 
-class _ProductDetailPageState extends State<ProductDetailPage> {
+class _ProductDetailPageState extends State<ProductDetailPage>
+    with AutomaticKeepAliveClientMixin {
   Product? _product;
   bool _isLoading = true;
+  final PreloadingService _preloadingService = PreloadingService();
+
+  @override
+  bool get wantKeepAlive => true; // 保持页面状态
 
   @override
   void initState() {
@@ -38,6 +52,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         _product = product;
         _isLoading = false;
       });
+
+      // 预加载商品图片
+      if (product != null) {
+        _preloadingService.preloadProductImages(product, priority: false);
+      }
     }
   }
 
@@ -53,6 +72,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // 必须调用，用于AutomaticKeepAliveClientMixin
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('商品详情')),
@@ -80,19 +101,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(), // 弹性滚动
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 商品图片
-            Container(
+            // 商品图片 - 使用懒加载
+            LazyLoadImageWidget(
+              imageUrl: _product!.imageUrl,
               width: double.infinity,
               height: 300,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(_product!.imageUrl),
-                  fit: BoxFit.cover,
-                ),
-              ),
+              fit: BoxFit.cover,
+              visibilityThreshold: 0.5,
             ),
 
             // 商品信息
@@ -216,9 +235,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       case 'process':
       case 'tips':
       default:
-        return HtmlContentWidget(
+        return OptimizedHtmlContentWidget(
           content: section.content,
           title: section.title ?? _getDefaultTitle(section.sectionType),
+          visibilityThreshold: 0.3,
         );
     }
   }

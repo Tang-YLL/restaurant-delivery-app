@@ -134,6 +134,9 @@ async def get_current_admin(
     db: AsyncSession = Depends(get_db)
 ) -> Admin:
     """获取当前管理员"""
+    import logging
+    logger = logging.getLogger(__name__)
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="无法验证凭据",
@@ -141,28 +144,36 @@ async def get_current_admin(
     )
 
     token = credentials.credentials
+    logger.info(f"正在验证admin token: {token[:20]}...")
     payload = decode_token(token)
 
     if payload is None:
+        logger.error("Token解码失败")
         raise credentials_exception
 
+    logger.info(f"Token payload: {payload}")
     token_type: str = payload.get("type")
     if token_type != "access":
+        logger.error(f"Token类型错误: {token_type}")
         raise credentials_exception
 
     # 检查是否为管理员token
     is_admin: bool = payload.get("is_admin", False)
     if not is_admin:
+        logger.error("不是admin token")
         raise credentials_exception
 
     admin_id_str: str = payload.get("sub")
     if admin_id_str is None:
+        logger.error("Token中没有sub")
         raise credentials_exception
 
     # 将字符串转换回整数
     try:
         admin_id = int(admin_id_str)
+        logger.info(f"Admin ID: {admin_id}")
     except (ValueError, TypeError):
+        logger.error(f"Admin ID转换失败: {admin_id_str}")
         raise credentials_exception
 
     # 检查token是否在黑名单中

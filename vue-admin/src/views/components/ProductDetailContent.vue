@@ -2,9 +2,11 @@
   <el-dialog
     v-model="visible"
     title="商品详情内容管理"
-    width="1200px"
+    width="90%"
+    :style="{ maxWidth: '1400px' }"
     @close="handleClose"
     :close-on-click-modal="false"
+    draggable
   >
     <el-tabs v-model="activeTab" type="border-card">
       <!-- 列表管理模式 -->
@@ -222,6 +224,12 @@ watch(visible, (newValue) => {
 </script>
 
 <style scoped>
+/* 确保对话框主体有最大高度并可滚动 */
+:deep(.el-dialog__body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
 .empty-state {
   padding: 40px 0;
   text-align: center;

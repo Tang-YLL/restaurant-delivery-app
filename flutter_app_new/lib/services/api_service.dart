@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import '../core/config/dio_config.dart';
 import '../core/models/api_response.dart';
-import 'dart:developer' as developer;
 
 /// API服务基类（静态方法）
 class ApiService {

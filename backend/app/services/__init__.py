@@ -5,6 +5,7 @@ Service层 - 业务逻辑层
 from typing import List, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
+from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 from decimal import Decimal
 import secrets
@@ -1062,10 +1063,11 @@ class AdminService:
         if max_amount is not None:
             conditions.append(Order.total_amount <= max_amount)
 
-        # 查询订单
+        # 查询订单（预加载用户信息）
         skip = (page - 1) * page_size
 
-        query = select(Order).join(Order.user)
+        # 使用joinedload预加载user，不需要显式join
+        query = select(Order).options(joinedload(Order.user))
         if conditions:
             query = query.where(and_(*conditions))
 

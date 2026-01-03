@@ -232,7 +232,7 @@ async def delete_product(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{product_id}/full-details", response_model=FullProductDetailResponse)
+@router.get("/{product_id}/full-details")
 async def get_full_product_details(
     product_id: int,
     db: AsyncSession = Depends(get_db)
@@ -240,11 +240,13 @@ async def get_full_product_details(
     """
     用户端获取完整商品详情
 
-    包含所有内容分区和营养数据，无需认证即可访问
+    包含商品基本信息、所有内容分区和营养数据，无需认证即可访问
     """
     try:
         detail_service = ProductDetailService()
         details = await detail_service.get_full_details(product_id, db)
-        return FullProductDetailResponse(**details)
+        return details
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

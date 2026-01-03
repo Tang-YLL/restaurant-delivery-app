@@ -34,6 +34,8 @@ dependencies:
   # Image & Cache
   cached_network_image: ^3.3.0
   image_picker: ^1.0.4
+  visibility_detector: ^0.4.0+2
+  flutter_cache_manager: ^3.3.1
 
   # UI Components
   shimmer: ^3.0.0

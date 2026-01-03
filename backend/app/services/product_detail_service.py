@@ -8,7 +8,7 @@
 """
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
-from app.models import ContentSection, NutritionFact
+from app.models import ContentSection, NutritionFact, Product
 from app.schemas import ContentSectionCreate, ContentSectionUpdate, NutritionFactsCreate
 from typing import List, Optional
 import bleach
@@ -70,8 +70,17 @@ class ProductDetailService:
             db: 数据库会话
 
         Returns:
-            包含内容分区和营养数据的字典
+            包含商品基本信息、内容分区和营养数据的字典
         """
+        # 获取商品基本信息
+        result = await db.execute(
+            select(Product).where(Product.id == product_id)
+        )
+        product = result.scalar_one_or_none()
+
+        if not product:
+            raise ValueError(f"商品 {product_id} 不存在")
+
         # 获取内容分区
         result = await db.execute(
             select(ContentSection)
@@ -87,11 +96,32 @@ class ProductDetailService:
         )
         nutrition = result.scalar_one_or_none()
 
-        return {
-            "product_id": product_id,
+        # 将商品对象转换为字典并合并详情数据
+        product_dict = {
+            "id": product.id,
+            "title": product.title,
+            "category_id": product.category_id,
+            "detail_url": product.detail_url,
+            "image_url": product.image_url,
+            "local_image_path": product.local_image_path,
+            "ingredients": product.ingredients,
+            "description": product.description,
+            "price": float(product.price) if product.price else 0,
+            "stock": product.stock,
+            "sales_count": product.sales_count,
+            "views": product.views,
+            "favorites": product.favorites,
+            "status": product.status,
+            "is_active": product.is_active,
+            "sort_order": product.sort_order,
+            "created_at": product.created_at.isoformat() if product.created_at else None,
+            "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+            # 添加详情数据
             "content_sections": sections,
             "nutrition_facts": nutrition
         }
+
+        return product_dict
 
     async def save_content_section(
         self,

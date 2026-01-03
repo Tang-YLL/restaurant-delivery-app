@@ -2,7 +2,8 @@
   <el-dialog
     v-model="visible"
     :title="isEdit ? '编辑分区' : '创建分区'"
-    width="900px"
+    width="90%"
+    :style="{ maxWidth: '800px' }"
     @close="handleClose"
     :close-on-click-modal="false"
   >
@@ -64,6 +65,7 @@
           v-model="formData.content"
           placeholder="请输入分区内容，支持富文本编辑..."
           :min-height="300"
+          :product-id="formData.product_id"
         />
       </el-form-item>
 
@@ -121,6 +123,7 @@ import type { ContentSection, SectionType } from '@/types'
 interface Props {
   modelValue: boolean
   section: ContentSection | null
+  productId?: number
 }
 
 const props = defineProps<Props>()
@@ -284,7 +287,7 @@ function applyTemplate(template: any) {
 function resetForm() {
   formData.value = {
     id: undefined,
-    product_id: 0,
+    product_id: props.productId || 0,
     section_type: 'story',
     title: '',
     content: '',

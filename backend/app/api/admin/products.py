@@ -615,8 +615,17 @@ async def get_product_detail_sections(
     返回商品的所有内容分区和营养数据
     """
     try:
-        details = await detail_service.get_full_details(product_id, db)
-        return FullProductDetailResponse(**details)
+        # 获取完整商品详情（包含基本信息）
+        full_details = await detail_service.get_full_details(product_id, db)
+
+        # 提取管理后台需要的字段
+        return FullProductDetailResponse(
+            product_id=full_details["id"],
+            content_sections=full_details.get("content_sections", []),
+            nutrition_facts=full_details.get("nutrition_facts")
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -730,7 +739,7 @@ async def batch_update_sections(
 
 # ==================== 营养数据管理 ====================
 
-@router.get("/{product_id}/details/nutrition", response_model=NutritionFactsResponse)
+@router.get("/{product_id}/details/nutrition")
 async def get_nutrition_facts(
     product_id: int,
     db: AsyncSession = Depends(get_db),
@@ -740,12 +749,24 @@ async def get_nutrition_facts(
     获取商品营养数据
 
     返回指定商品的营养成分信息
+    如果营养数据不存在，返回空对象而不是404错误
     """
     try:
         nutrition = await detail_service.get_nutrition_facts(product_id, db)
 
         if not nutrition:
-            raise HTTPException(status_code=404, detail="营养数据不存在")
+            # 返回空的营养数据对象而不是404
+            return {
+                "product_id": product_id,
+                "serving_size": None,
+                "calories": 0,
+                "protein": 0,
+                "fat": 0,
+                "carbohydrates": 0,
+                "sodium": 0,
+                "dietary_fiber": None,
+                "sugars": None
+            }
 
         return nutrition
     except HTTPException:
