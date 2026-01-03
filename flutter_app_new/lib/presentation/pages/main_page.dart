@@ -5,6 +5,9 @@ import 'profile_page.dart';
 import 'order_list_page.dart';
 import 'category_page.dart';
 
+/// 主页面导航键 - 用于从外部控制页面切换
+final GlobalKey<_MainPageState> mainPageKey = GlobalKey<_MainPageState>();
+
 /// 主页面 - 带底部导航栏
 class MainPage extends StatefulWidget {
   final int initialIndex;
@@ -29,6 +32,16 @@ class _MainPageState extends State<MainPage> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// 切换到指定标签页 - 公开方法供外部调用
+  void switchToTab(int index) {
+    if (index >= 0 && index < 5) {
+      _pageController.jumpToPage(index);
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   void _onPageChanged(int index) {

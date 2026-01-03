@@ -13,6 +13,7 @@ import 'presentation/providers/review_provider.dart';
 import 'presentation/routes/app_routes.dart';
 import 'presentation/routes/route_generator.dart';
 import 'presentation/services/navigation_service.dart';
+import 'presentation/pages/main_page.dart';
 import 'core/config/hive_config.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

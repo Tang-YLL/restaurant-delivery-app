@@ -9,6 +9,7 @@ import '../../widgets/nutrition_table_widget.dart';
 import '../../widgets/lazy_load_image_widget.dart';
 import '../../widgets/optimized_html_content_widget.dart';
 import '../../services/preloading_service.dart';
+import '../pages/main_page.dart';
 
 /// 商品详情页
 ///
@@ -95,8 +96,10 @@ class _ProductDetailPageState extends State<ProductDetailPage>
           IconButton(
             icon: const Icon(Icons.shopping_cart),
             onPressed: () {
-              // 使用 pushReplacementNamed 替换当前路由，避免创建多个 MainPage 实例
-              Navigator.pushReplacementNamed(context, '/cart');
+              // 返回上一页，然后切换到购物车标签
+              Navigator.pop(context);
+              // 使用 GlobalKey 访问 MainPage 的 State 并切换标签
+              mainPageKey.currentState?.switchToTab(2); // 2 是购物车标签索引
             },
           ),
         ],
