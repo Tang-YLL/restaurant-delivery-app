@@ -85,6 +85,8 @@ vue-admin/pnpm-debug.log*
 *.log
 logs/
 backend/logs/
+vue-admin/logs/
+docs/logs/*.log
 
 # SSL证书
 nginx/ssl/*.key

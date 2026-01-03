@@ -97,10 +97,20 @@ flutter run
 
 ## 📚 文档
 
+### 项目文档
 - [部署指南](docs/DEPLOYMENT.md) - 完整的部署步骤
 - [项目总结](docs/PROJECT_SUMMARY.md) - 详细的技术总结
 - [快速开始](docs/QUICKSTART.md) - 5分钟快速启动
 - [API文档](docs/API_GUIDE.md) - 后端API使用指南
+- [文档归档](docs/ARCHIVE_README.md) - 开发日志、脚本和报告
+
+### 开发报告
+- [总体测试报告](docs/reports/TEST_REPORT.md) - 总体测试报告
+- [API兼容性报告](docs/reports/API_COMPATIBILITY_REPORT.md) - API兼容性报告
+- [项目交付清单](docs/reports/交付清单.md) - 项目交付清单
+- [后端报告](docs/reports/backend/) - 后端开发报告
+- [Vue管理后台报告](docs/reports/vue-admin/) - Vue管理后台报告
+- [Flutter移动端报告](docs/reports/flutter/) - Flutter移动端报告
 
 ## 🛠️ 技术栈
 
